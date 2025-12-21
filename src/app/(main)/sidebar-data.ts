@@ -12,8 +12,8 @@ import {
 
 export const sidebarData = {
     user: {
-        name: "shadcn",
-        email: "m@example.com",
+        name: "desenvolvedorteste01",
+        email: "desenvolvedorteste01@gmail.com",
         avatar: "/avatars/shadcn.jpg",
     },
     navMain: [
