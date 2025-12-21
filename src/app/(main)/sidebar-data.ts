@@ -4,7 +4,6 @@ import {
     GraduationCap,
     LayoutDashboard,
     ShieldCheck,
-    Users,
 } from "lucide-react"
 
 export const sidebarData = {
