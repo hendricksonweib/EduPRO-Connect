@@ -57,7 +57,7 @@ export const sidebarData = {
                 },
                 {
                     title: "Professores",
-                    url: "/work-in-progress?section=professores",
+                    url: "/cadastros/professores",
                 },
             ],
         },
