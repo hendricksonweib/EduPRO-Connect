@@ -1,9 +1,10 @@
 import {
     BookOpen,
     Calendar,
+    GraduationCap,
     LayoutDashboard,
     Settings,
-    Users,
+    UserCheck,
 } from "lucide-react"
 
 export const sidebarData = {
@@ -47,28 +48,43 @@ export const sidebarData = {
             ],
         },
         {
-            title: "Cadastros",
-            url: "/work-in-progress?section=cadastros",
-            icon: Users,
+            title: "Alunos",
+            url: "/alunos",
+            icon: GraduationCap,
             items: [
                 {
-                    title: "Alunos",
-                    url: "/cadastros/alunos",
+                    title: "Todos os Alunos",
+                    url: "/alunos",
                 },
                 {
-                    title: "Professores",
-                    url: "/cadastros/professores",
+                    title: "Novo Aluno",
+                    url: "/alunos/novo",
+                },
+            ],
+        },
+        {
+            title: "Professores",
+            url: "/professores",
+            icon: UserCheck,
+            items: [
+                {
+                    title: "Todos os Professores",
+                    url: "/professores",
+                },
+                {
+                    title: "Novo Professor",
+                    url: "/professores/novo",
                 },
             ],
         },
         {
             title: "Calendário",
-            url: "/work-in-progress?section=calendario",
+            url: "/calendario",
             icon: Calendar,
             items: [
                 {
                     title: "Avisos",
-                    url: "/work-in-progress?section=avisos",
+                    url: "/calendario/avisos",
                 },
             ],
         },
