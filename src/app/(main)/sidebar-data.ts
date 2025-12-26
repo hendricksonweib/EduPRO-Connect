@@ -32,18 +32,16 @@ export const sidebarData = {
         },
         {
             title: "Turmas",
-            url: "/work-in-progress?section=turmas",
+            url: "/turmas",
             icon: BookOpen,
             items: [
                 {
-                    title: "Matérias",
-                    url: "/work-in-progress?section=materias",
-                    items: [
-                        {
-                            title: "Conteúdos",
-                            url: "/work-in-progress?section=conteudos",
-                        }
-                    ]
+                    title: "Todas as Turmas",
+                    url: "/turmas",
+                },
+                {
+                    title: "Nova Turma",
+                    url: "/turmas/nova",
                 },
             ],
         },
