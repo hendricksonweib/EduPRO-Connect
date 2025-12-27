@@ -87,11 +87,19 @@ export const sidebarData = {
                 },
                 {
                     title: "Funcionários",
-                    url: "/work-in-progress?section=funcionarios",
+                    url: "/administrativo/funcionarios",
                     items: [
                         {
-                            title: "Tipo de Acesso",
-                            url: "/work-in-progress?section=tipo-acesso",
+                            title: "Todos os Funcionários",
+                            url: "/administrativo/funcionarios",
+                        },
+                        {
+                            title: "Novo Funcionário",
+                            url: "/administrativo/funcionarios/novo",
+                        },
+                        {
+                            title: "Níveis de Acesso",
+                            url: "/administrativo/funcionarios/acessos",
                         }
                     ]
                 },
