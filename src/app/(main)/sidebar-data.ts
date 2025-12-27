@@ -19,16 +19,6 @@ export const sidebarData = {
             url: "/dashboard",
             icon: LayoutDashboard,
             isActive: true,
-            items: [
-                {
-                    title: "Desempenho",
-                    url: "/dashboard",
-                },
-                {
-                    title: "Resumo Financeiro",
-                    url: "/work-in-progress?section=financeiro-resumo",
-                },
-            ],
         },
         {
             title: "Turmas",
