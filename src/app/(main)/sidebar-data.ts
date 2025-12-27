@@ -93,7 +93,7 @@ export const sidebarData = {
             items: [
                 {
                     title: "Financeiro",
-                    url: "/work-in-progress?section=financeiro",
+                    url: "/administrativo/financeiro",
                 },
                 {
                     title: "Funcionários",
