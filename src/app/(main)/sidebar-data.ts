@@ -1,9 +1,10 @@
 import {
     BookOpen,
-    DollarSign,
+    Calendar,
     GraduationCap,
     LayoutDashboard,
-    ShieldCheck,
+    Settings,
+    UserCheck,
 } from "lucide-react"
 
 export const sidebarData = {
@@ -20,24 +21,89 @@ export const sidebarData = {
             isActive: true,
         },
         {
-            title: "Alunos e Turmas",
-            url: "/alunos-turmas",
-            icon: GraduationCap,
-        },
-        {
-            title: "Financeiro",
-            url: "/financeiro",
-            icon: DollarSign,
-        },
-        {
-            title: "Pedagógico",
-            url: "/pedagogico",
+            title: "Turmas",
+            url: "/turmas",
             icon: BookOpen,
+            items: [
+                {
+                    title: "Todas as Turmas",
+                    url: "/turmas",
+                },
+                {
+                    title: "Nova Turma",
+                    url: "/turmas/nova",
+                },
+            ],
         },
         {
-            title: "Portaria",
-            url: "/portaria",
-            icon: ShieldCheck,
+            title: "Alunos",
+            url: "/alunos",
+            icon: GraduationCap,
+            items: [
+                {
+                    title: "Todos os Alunos",
+                    url: "/alunos",
+                },
+                {
+                    title: "Novo Aluno",
+                    url: "/alunos/novo",
+                },
+            ],
+        },
+        {
+            title: "Professores",
+            url: "/professores",
+            icon: UserCheck,
+            items: [
+                {
+                    title: "Todos os Professores",
+                    url: "/professores",
+                },
+                {
+                    title: "Novo Professor",
+                    url: "/professores/novo",
+                },
+            ],
+        },
+        {
+            title: "Calendário",
+            url: "/calendario",
+            icon: Calendar,
+            items: [
+                {
+                    title: "Avisos",
+                    url: "/calendario/avisos",
+                },
+            ],
+        },
+        {
+            title: "Administrativo",
+            url: "/work-in-progress?section=administrativo",
+            icon: Settings,
+            items: [
+                {
+                    title: "Financeiro",
+                    url: "/administrativo/financeiro",
+                },
+                {
+                    title: "Funcionários",
+                    url: "/administrativo/funcionarios",
+                    items: [
+                        {
+                            title: "Todos os Funcionários",
+                            url: "/administrativo/funcionarios",
+                        },
+                        {
+                            title: "Novo Funcionário",
+                            url: "/administrativo/funcionarios/novo",
+                        },
+                        {
+                            title: "Níveis de Acesso",
+                            url: "/administrativo/funcionarios/acessos",
+                        }
+                    ]
+                },
+            ],
         },
     ],
     navSecondary: [],
