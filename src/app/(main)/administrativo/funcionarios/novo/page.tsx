@@ -29,7 +29,7 @@ import { toast } from "sonner"
 export default function NovoFuncionarioPage() {
     const router = useRouter()
     const params = useParams()
-    const isEditing = !!params.id
+    const isEditing = !!params?.id
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const [isLoading, setIsLoading] = useState(false)
@@ -54,7 +54,7 @@ export default function NovoFuncionarioPage() {
 
     const fetchEmployee = async () => {
         try {
-            const user = await userService.getById(Number(params.id))
+            const user = await userService.getById(Number(params?.id))
             setFormData({
                 username: user.username,
                 email: user.email,
@@ -121,7 +121,7 @@ export default function NovoFuncionarioPage() {
             }
 
             if (isEditing) {
-                await userService.update(Number(params.id), data)
+                await userService.update(Number(params?.id), data)
                 toast.success("Funcionário atualizado com sucesso")
             } else {
                 if (!formData.password) {

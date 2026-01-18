@@ -22,7 +22,7 @@ import { toast } from "sonner"
 export default function EditarAlunoPage() {
     const params = useParams()
     const router = useRouter()
-    const requestAlunoId = params.id
+    const requestAlunoId = params?.id
     const alunoId = Array.isArray(requestAlunoId) ? requestAlunoId[0] : requestAlunoId
 
     const [isLoading, setIsLoading] = useState(true)
