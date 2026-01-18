@@ -31,57 +31,50 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 
-// Dados de exemplo
-const mockProfessores = [
-    {
-        id: 1,
-        nome: "Dr. Carlos Eduardo Santos",
-        matricula: "PROF2024001",
-        materias: ["Matemática", "Física"],
-        formacao: "Mestrado",
-        telefone: "(11) 98765-1234",
-        status: "ativo",
-        avatar: "",
-    },
-    {
-        id: 2,
-        nome: "Prof. Mariana Costa Lima",
-        matricula: "PROF2024002",
-        materias: ["Português", "Literatura"],
-        formacao: "Pós-Graduação",
-        telefone: "(11) 97654-5678",
-        status: "ativo",
-        avatar: "",
-    },
-    {
-        id: 3,
-        nome: "Roberto Silva Oliveira",
-        matricula: "PROF2024003",
-        materias: ["História", "Geografia"],
-        formacao: "Graduação",
-        telefone: "(11) 96543-9012",
-        status: "ativo",
-        avatar: "",
-    },
-    {
-        id: 4,
-        nome: "Dra. Ana Paula Ferreira",
-        matricula: "PROF2024004",
-        materias: ["Química", "Biologia"],
-        formacao: "Doutorado",
-        telefone: "(11) 95432-3456",
-        status: "inativo",
-        avatar: "",
-    },
-]
+import { useEffect } from "react"
+import { academicService } from "@/services/academic.service"
+import { Teacher as TeacherType } from "@/services/types"
+import { toast } from "sonner"
 
 export default function ProfessoresPage() {
     const [searchTerm, setSearchTerm] = useState("")
+    const [professores, setProfessores] = useState<TeacherType[]>([])
+    const [isLoading, setIsLoading] = useState(true)
 
-    const filteredProfessores = mockProfessores.filter(professor =>
-        professor.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        professor.matricula.includes(searchTerm) ||
-        professor.materias.some(materia => materia.toLowerCase().includes(searchTerm.toLowerCase()))
+    useEffect(() => {
+        const fetchProfessores = async () => {
+            try {
+                const response = await academicService.teachers.getAll();
+                // Handle both paginated and non-paginated responses
+                setProfessores(Array.isArray(response) ? response : response.results);
+            } catch (error) {
+                console.error("Error fetching teachers:", error);
+                toast.error("Erro ao carregar lista de professores");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchProfessores();
+    }, []);
+
+    const handleDelete = async (id: number) => {
+        if (confirm("Tem certeza que deseja excluir este professor?")) {
+            try {
+                await academicService.teachers.delete(id);
+                setProfessores(prev => prev.filter(p => p.id !== id));
+                toast.success("Professor excluído com sucesso");
+            } catch (error) {
+                console.error("Error deleting teacher:", error);
+                toast.error("Erro ao excluir professor");
+            }
+        }
+    };
+
+    const filteredProfessores = professores.filter(professor =>
+        professor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        professor.registration.includes(searchTerm) ||
+        professor.disciplines?.some(discipline => discipline.name.toLowerCase().includes(searchTerm.toLowerCase()))
     )
 
     return (
@@ -129,16 +122,20 @@ export default function ProfessoresPage() {
                                 <TableHead>Professor</TableHead>
                                 <TableHead>Matrícula</TableHead>
                                 <TableHead>Matérias</TableHead>
-                                <TableHead>Formação</TableHead>
                                 <TableHead>Telefone</TableHead>
-                                <TableHead>Status</TableHead>
                                 <TableHead className="text-right">Ações</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredProfessores.length === 0 ? (
+                            {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                    <TableCell colSpan={5} className="text-center py-8">
+                                        Carregando professores...
+                                    </TableCell>
+                                </TableRow>
+                            ) : filteredProfessores.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                                         Nenhum professor encontrado
                                     </TableCell>
                                 </TableRow>
@@ -150,29 +147,23 @@ export default function ProfessoresPage() {
                                                 <Avatar className="h-8 w-8">
                                                     <AvatarImage src={professor.avatar} />
                                                     <AvatarFallback>
-                                                        {professor.nome.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                                        {professor.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                                                     </AvatarFallback>
                                                 </Avatar>
-                                                <span className="font-medium">{professor.nome}</span>
+                                                <span className="font-medium">{professor.name}</span>
                                             </div>
                                         </TableCell>
-                                        <TableCell>{professor.matricula}</TableCell>
+                                        <TableCell>{professor.registration}</TableCell>
                                         <TableCell>
                                             <div className="flex flex-wrap gap-1">
-                                                {professor.materias.map((materia, idx) => (
+                                                {professor.disciplines?.map((discipline, idx) => (
                                                     <Badge key={idx} variant="outline" className="text-xs">
-                                                        {materia}
+                                                        {discipline.name}
                                                     </Badge>
                                                 ))}
                                             </div>
                                         </TableCell>
-                                        <TableCell>{professor.formacao}</TableCell>
-                                        <TableCell>{professor.telefone}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={professor.status === "ativo" ? "default" : "secondary"}>
-                                                {professor.status === "ativo" ? "Ativo" : "Inativo"}
-                                            </Badge>
-                                        </TableCell>
+                                        <TableCell>{professor.phone}</TableCell>
                                         <TableCell className="text-right">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
@@ -190,7 +181,10 @@ export default function ProfessoresPage() {
                                                             Editar
                                                         </Link>
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-destructive">
+                                                    <DropdownMenuItem
+                                                        className="text-destructive"
+                                                        onClick={() => handleDelete(professor.id)}
+                                                    >
                                                         <Trash2 className="mr-2 h-4 w-4" />
                                                         Excluir
                                                     </DropdownMenuItem>

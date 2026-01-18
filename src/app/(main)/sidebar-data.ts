@@ -24,46 +24,16 @@ export const sidebarData = {
             title: "Turmas",
             url: "/turmas",
             icon: BookOpen,
-            items: [
-                {
-                    title: "Todas as Turmas",
-                    url: "/turmas",
-                },
-                {
-                    title: "Nova Turma",
-                    url: "/turmas/nova",
-                },
-            ],
         },
         {
             title: "Alunos",
             url: "/alunos",
             icon: GraduationCap,
-            items: [
-                {
-                    title: "Todos os Alunos",
-                    url: "/alunos",
-                },
-                {
-                    title: "Novo Aluno",
-                    url: "/alunos/novo",
-                },
-            ],
         },
         {
             title: "Professores",
             url: "/professores",
             icon: UserCheck,
-            items: [
-                {
-                    title: "Todos os Professores",
-                    url: "/professores",
-                },
-                {
-                    title: "Novo Professor",
-                    url: "/professores/novo",
-                },
-            ],
         },
         {
             title: "Calendário",
@@ -78,33 +48,20 @@ export const sidebarData = {
         },
         {
             title: "Administrativo",
-            url: "/work-in-progress?section=administrativo",
+            url: "/administrativo",
             icon: Settings,
             items: [
+                {
+                    title: "Funcionários",
+                    url: "/administrativo/funcionarios",
+                },
                 {
                     title: "Financeiro",
                     url: "/administrativo/financeiro",
                 },
-                {
-                    title: "Funcionários",
-                    url: "/administrativo/funcionarios",
-                    items: [
-                        {
-                            title: "Todos os Funcionários",
-                            url: "/administrativo/funcionarios",
-                        },
-                        {
-                            title: "Novo Funcionário",
-                            url: "/administrativo/funcionarios/novo",
-                        },
-                        {
-                            title: "Níveis de Acesso",
-                            url: "/administrativo/funcionarios/acessos",
-                        }
-                    ]
-                },
             ],
         },
+
     ],
     navSecondary: [],
     projects: [],

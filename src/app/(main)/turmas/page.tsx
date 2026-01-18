@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { MoreHorizontal, Pencil, Trash2, Plus, Search, BookOpen, Users, FileText } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -29,58 +29,50 @@ import {
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-
-// Dados de exemplo
-const mockTurmas = [
-    {
-        id: 1,
-        nome: "3º Ano A - Ensino Médio",
-        periodo: "Matutino",
-        ano: "2024",
-        totalAlunos: 28,
-        totalMaterias: 12,
-        professor: "Prof. Carlos Eduardo",
-        status: "ativa",
-    },
-    {
-        id: 2,
-        nome: "2º Ano B - Ensino Médio",
-        periodo: "Vespertino",
-        ano: "2024",
-        totalAlunos: 32,
-        totalMaterias: 11,
-        professor: "Profa. Mariana Costa",
-        status: "ativa",
-    },
-    {
-        id: 3,
-        nome: "1º Ano A - Ensino Fundamental",
-        periodo: "Matutino",
-        ano: "2024",
-        totalAlunos: 25,
-        totalMaterias: 8,
-        professor: "Profa. Ana Paula",
-        status: "ativa",
-    },
-    {
-        id: 4,
-        nome: "3º Ano B - Ensino Médio (2023)",
-        periodo: "Matutino",
-        ano: "2023",
-        totalAlunos: 30,
-        totalMaterias: 12,
-        professor: "Prof. Roberto Silva",
-        status: "arquivada",
-    },
-]
+import { academicService } from "@/services/academic.service"
+import { Classroom } from "@/services/types"
+import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
 
 export default function TurmasPage() {
     const [searchTerm, setSearchTerm] = useState("")
+    const [turmas, setTurmas] = useState<Classroom[]>([])
+    const [loading, setLoading] = useState(true)
 
-    const filteredTurmas = mockTurmas.filter(turma =>
-        turma.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        turma.periodo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        turma.professor.toLowerCase().includes(searchTerm.toLowerCase())
+    const fetchTurmas = async () => {
+        try {
+            setLoading(true)
+            const response = await academicService.classes.getAll()
+            setTurmas(response?.results || [])
+        } catch (error) {
+            console.error("Erro ao buscar turmas:", error)
+            toast.error("Não foi possível carregar as turmas.")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        fetchTurmas()
+    }, [])
+
+    const handleDelete = async (id: number) => {
+        if (!confirm("Tem certeza que deseja excluir esta turma?")) return
+
+        try {
+            await academicService.classes.delete(id)
+            toast.success("Turma excluída com sucesso!")
+            fetchTurmas()
+        } catch (error) {
+            console.error("Erro ao excluir turma:", error)
+            toast.error("Erro ao excluir a turma.")
+        }
+    }
+
+    const filteredTurmas = (turmas || []).filter(turma =>
+        (turma.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (turma.period || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (turma.responsible_teacher_name || "").toLowerCase().includes(searchTerm.toLowerCase())
     )
 
     return (
@@ -136,7 +128,15 @@ export default function TurmasPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredTurmas.length === 0 ? (
+                            {loading ? (
+                                Array.from({ length: 5 }).map((_, i) => (
+                                    <TableRow key={i}>
+                                        <TableCell colSpan={8}>
+                                            <Skeleton className="h-8 w-full" />
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : filteredTurmas.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                                         Nenhuma turma encontrada
@@ -148,24 +148,24 @@ export default function TurmasPage() {
                                         <TableCell>
                                             <div className="flex items-center gap-2">
                                                 <BookOpen className="h-4 w-4 text-muted-foreground" />
-                                                <span className="font-medium">{turma.nome}</span>
+                                                <span className="font-medium">{turma.name}</span>
                                             </div>
                                         </TableCell>
-                                        <TableCell>{turma.periodo}</TableCell>
-                                        <TableCell>{turma.ano}</TableCell>
+                                        <TableCell>{turma.period}</TableCell>
+                                        <TableCell>{turma.year}</TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-1">
                                                 <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                                                <span>{turma.totalAlunos}</span>
+                                                <span>{turma.total_students || 0}</span>
                                             </div>
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-1">
                                                 <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                                                <span>{turma.totalMaterias}</span>
+                                                <span>{turma.total_disciplines || 0}</span>
                                             </div>
                                         </TableCell>
-                                        <TableCell>{turma.professor}</TableCell>
+                                        <TableCell>{turma.responsible_teacher_name || "Não atribuído"}</TableCell>
                                         <TableCell>
                                             <Badge variant={turma.status === "ativa" ? "default" : "secondary"}>
                                                 {turma.status === "ativa" ? "Ativa" : "Arquivada"}
@@ -194,7 +194,10 @@ export default function TurmasPage() {
                                                             Editar Turma
                                                         </Link>
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-destructive">
+                                                    <DropdownMenuItem
+                                                        className="text-destructive"
+                                                        onClick={() => handleDelete(turma.id)}
+                                                    >
                                                         <Trash2 className="mr-2 h-4 w-4" />
                                                         Excluir
                                                     </DropdownMenuItem>

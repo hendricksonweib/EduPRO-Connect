@@ -1,5 +1,7 @@
 "use client"
 
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Upload, User, Briefcase, CreditCard, FileText, MapPin, GraduationCap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,10 +16,83 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { academicService } from "@/services/academic.service"
+import { Discipline, Teacher } from "@/services/types"
+import { toast } from "sonner"
 
 export default function CadastroProfessoresPage() {
+    const router = useRouter()
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [disciplines, setDisciplines] = useState<Discipline[]>([])
+
+    const [formData, setFormData] = useState({
+        name: "",
+        birth_date: "",
+        cpf: "",
+        rg: "",
+        email: "",
+        phone: "",
+        education: "",
+        admission_date: "",
+        registration: `PROF${new Date().getFullYear()}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
+        bank: "",
+        agency: "",
+        account: "",
+        pix: "",
+        discipline_ids: [] as number[]
+    })
+
+    useEffect(() => {
+        const fetchDisciplines = async () => {
+            try {
+                const response = await academicService.subjects.getAll()
+                setDisciplines(Array.isArray(response) ? response : response.results)
+            } catch (error) {
+                console.error("Error fetching disciplines:", error)
+            }
+        }
+        fetchDisciplines()
+    }, [])
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { id, value } = e.target
+        setFormData(prev => ({ ...prev, [id]: value }))
+    }
+
+    const handleDisciplineChange = (id: number, checked: boolean) => {
+        setFormData(prev => ({
+            ...prev,
+            discipline_ids: checked
+                ? [...prev.discipline_ids, id]
+                : prev.discipline_ids.filter(dId => dId !== id)
+        }))
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setIsSubmitting(true)
+
+        // Sanitize data: convert empty strings to null for date fields
+        const sanitizedData = {
+            ...formData,
+            birth_date: formData.birth_date || null,
+            admission_date: formData.admission_date || null,
+        }
+
+        try {
+            await academicService.teachers.create(sanitizedData)
+            toast.success("Professor cadastrado com sucesso!")
+            router.push("/professores")
+        } catch (error: any) {
+            console.error("Error creating teacher:", error)
+            const message = academicService.handleError(error) || "Erro ao cadastrar professor"
+            toast.error(message)
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold tracking-tight">Cadastro de Professor</h1>
             </div>
@@ -47,7 +122,7 @@ export default function CadastroProfessoresPage() {
                                         <AvatarImage src="/placeholder-user.jpg" />
                                         <AvatarFallback>PF</AvatarFallback>
                                     </Avatar>
-                                    <Button variant="outline" size="sm">
+                                    <Button variant="outline" size="sm" type="button">
                                         <Upload className="mr-2 h-4 w-4" />
                                         Alterar Foto
                                     </Button>
@@ -56,34 +131,66 @@ export default function CadastroProfessoresPage() {
 
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
-                                    <Label htmlFor="nome">Nome Completo</Label>
-                                    <Input id="nome" placeholder="Nome do professor" />
+                                    <Label htmlFor="name">Nome Completo</Label>
+                                    <Input
+                                        id="name"
+                                        placeholder="Nome do professor"
+                                        value={formData.name}
+                                        onChange={handleChange}
+                                        required
+                                    />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="nascimento">Data de Nascimento</Label>
-                                    <Input id="nascimento" type="date" />
+                                    <Label htmlFor="birth_date">Data de Nascimento</Label>
+                                    <Input
+                                        id="birth_date"
+                                        type="date"
+                                        value={formData.birth_date}
+                                        onChange={handleChange}
+                                    />
                                 </div>
                             </div>
 
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label htmlFor="cpf">CPF</Label>
-                                    <Input id="cpf" placeholder="000.000.000-00" />
+                                    <Input
+                                        id="cpf"
+                                        placeholder="000.000.000-00"
+                                        value={formData.cpf}
+                                        onChange={handleChange}
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="rg">RG</Label>
-                                    <Input id="rg" placeholder="Número do RG" />
+                                    <Input
+                                        id="rg"
+                                        placeholder="Número do RG"
+                                        value={formData.rg}
+                                        onChange={handleChange}
+                                    />
                                 </div>
                             </div>
 
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label htmlFor="email">Email Institucional</Label>
-                                    <Input id="email" type="email" placeholder="professor@escola.com" />
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        placeholder="professor@escola.com"
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                    />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="telefone">Telefone / Celular</Label>
-                                    <Input id="telefone" placeholder="(00) 00000-0000" />
+                                    <Label htmlFor="phone">Telefone / Celular</Label>
+                                    <Input
+                                        id="phone"
+                                        placeholder="(00) 00000-0000"
+                                        value={formData.phone}
+                                        onChange={handleChange}
+                                    />
                                 </div>
                             </div>
                         </CardContent>
@@ -101,68 +208,59 @@ export default function CadastroProfessoresPage() {
                             <div className="space-y-2">
                                 <Label>Matérias que Leciona</Label>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
-                                    {/* Substituindo Checkbox por input type="checkbox" */}
-                                    <div className="flex items-center space-x-2">
-                                        <input type="checkbox" id="matemática" className="h-4 w-4 rounded border-gray-300" />
-                                        <Label htmlFor="matemática">Matemática</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <input type="checkbox" id="portugues" className="h-4 w-4 rounded border-gray-300" />
-                                        <Label htmlFor="portugues">Português</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <input type="checkbox" id="historia" className="h-4 w-4 rounded border-gray-300" />
-                                        <Label htmlFor="historia">História</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <input type="checkbox" id="geografia" className="h-4 w-4 rounded border-gray-300" />
-                                        <Label htmlFor="geografia">Geografia</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <input type="checkbox" id="ciencias" className="h-4 w-4 rounded border-gray-300" />
-                                        <Label htmlFor="ciencias">Ciências</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <input type="checkbox" id="ingles" className="h-4 w-4 rounded border-gray-300" />
-                                        <Label htmlFor="ingles">Inglês</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <input type="checkbox" id="educacao-fisica" className="h-4 w-4 rounded border-gray-300" />
-                                        <Label htmlFor="educacao-fisica">Ed. Física</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <input type="checkbox" id="artes" className="h-4 w-4 rounded border-gray-300" />
-                                        <Label htmlFor="artes">Artes</Label>
-                                    </div>
+                                    {disciplines.length === 0 ? (
+                                        <p className="text-sm text-muted-foreground col-span-full">Nenhuma disciplina cadastrada.</p>
+                                    ) : (
+                                        disciplines.map(discipline => (
+                                            <div key={discipline.id} className="flex items-center space-x-2">
+                                                <input
+                                                    type="checkbox"
+                                                    id={`discipline-${discipline.id}`}
+                                                    className="h-4 w-4 rounded border-gray-300"
+                                                    checked={formData.discipline_ids.includes(discipline.id)}
+                                                    onChange={(e) => handleDisciplineChange(discipline.id, e.target.checked)}
+                                                />
+                                                <Label htmlFor={`discipline-${discipline.id}`}>{discipline.name}</Label>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                             </div>
 
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
-                                    <Label htmlFor="formacao">Formação Acadêmica</Label>
+                                    <Label htmlFor="education">Formação Acadêmica</Label>
                                     <div className="relative">
                                         <select
-                                            id="formacao"
+                                            id="education"
                                             className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            value={formData.education}
+                                            onChange={handleChange}
+                                            required
                                         >
-                                            <option value="" disabled selected>Selecione...</option>
-                                            <option value="graduacao">Graduação</option>
-                                            <option value="pos">Pós-Graduação</option>
-                                            <option value="mestrado">Mestrado</option>
-                                            <option value="doutorado">Doutorado</option>
+                                            <option value="" disabled>Selecione...</option>
+                                            <option value="Graduação">Graduação</option>
+                                            <option value="Pós-Graduação">Pós-Graduação</option>
+                                            <option value="Mestrado">Mestrado</option>
+                                            <option value="Doutorado">Doutorado</option>
                                         </select>
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="admissao">Data de Admissão</Label>
-                                    <Input id="admissao" type="date" />
+                                    <Label htmlFor="admission_date">Data de Admissão</Label>
+                                    <Input
+                                        id="admission_date"
+                                        type="date"
+                                        value={formData.admission_date}
+                                        onChange={handleChange}
+                                    />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
                                 <Label htmlFor="diploma">Diploma / Certificados (Upload)</Label>
-                                <Input id="diploma" type="file" multiple />
-                                <p className="text-[0.8rem] text-muted-foreground">Pode selecionar múltiplos arquivos.</p>
+                                <Input id="diploma" type="file" multiple disabled />
+                                <p className="text-[0.8rem] text-muted-foreground">Funcionalidade de upload em breve.</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -179,26 +277,48 @@ export default function CadastroProfessoresPage() {
                         <CardContent className="space-y-4">
                             <div className="grid gap-4 md:grid-cols-3">
                                 <div className="space-y-2">
-                                    <Label htmlFor="banco">Banco</Label>
-                                    <Input id="banco" placeholder="Ex: Banco do Brasil" />
+                                    <Label htmlFor="bank">Banco</Label>
+                                    <Input
+                                        id="bank"
+                                        placeholder="Ex: Banco do Brasil"
+                                        value={formData.bank}
+                                        onChange={handleChange}
+                                    />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="agencia">Agência</Label>
-                                    <Input id="agencia" placeholder="0000" />
+                                    <Label htmlFor="agency">Agência</Label>
+                                    <Input
+                                        id="agency"
+                                        placeholder="0000"
+                                        value={formData.agency}
+                                        onChange={handleChange}
+                                    />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="conta">Conta Corrente</Label>
-                                    <Input id="conta" placeholder="00000-0" />
+                                    <Label htmlFor="account">Conta Corrente</Label>
+                                    <Input
+                                        id="account"
+                                        placeholder="00000-0"
+                                        value={formData.account}
+                                        onChange={handleChange}
+                                    />
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="pix">Chave PIX</Label>
-                                <Input id="pix" placeholder="CPF, Email ou Aleatória" />
+                                <Input
+                                    id="pix"
+                                    placeholder="CPF, Email ou Aleatória"
+                                    value={formData.pix}
+                                    onChange={handleChange}
+                                />
                             </div>
                         </CardContent>
                         <CardFooter className="flex justify-end gap-2">
-                            <Button variant="outline">Cancelar</Button>
-                            <Button>Salvar Professor</Button>
+                            <Button variant="outline" type="button" onClick={() => router.push("/professores")}>Cancelar</Button>
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting ? "Salvando..." : "Salvar Professor"}
+                            </Button>
                         </CardFooter>
                     </Card>
 
@@ -215,12 +335,12 @@ export default function CadastroProfessoresPage() {
                                 <AvatarImage src="/placeholder-user.jpg" />
                                 <AvatarFallback className="text-4xl">PF</AvatarFallback>
                             </Avatar>
-                            <Button className="w-full" variant="outline">
+                            <Button className="w-full" variant="outline" type="button">
                                 <Upload className="mr-2 h-4 w-4" />
                                 Carregar Foto
                             </Button>
                             <p className="text-xs text-muted-foreground text-center">
-                                Use uma foto profissional e de boa qualidade.
+                                Use uma foto profissional e de boa qualidade. (EM BREVE)
                             </p>
                         </CardContent>
                     </Card>
@@ -243,6 +363,6 @@ export default function CadastroProfessoresPage() {
                 </div>
 
             </div>
-        </div>
+        </form>
     )
 }

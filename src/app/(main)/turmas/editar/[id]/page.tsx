@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { BookOpen, Users, X, Plus, Search } from "lucide-react"
-import { useParams } from "next/navigation"
+import { useEffect, useState } from "react"
+import { BookOpen, Users, X, Plus, Search, Loader2 } from "lucide-react"
+import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
     Card,
@@ -15,41 +15,114 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-
-// Mock de alunos disponíveis
-const mockAlunosDisponiveis = [
-    { id: 1, nome: "João Silva Santos", matricula: "2024001", avatar: "" },
-    { id: 2, nome: "Ana Paula Costa", matricula: "2024002", avatar: "" },
-    { id: 3, nome: "Pedro Henrique Oliveira", matricula: "2024003", avatar: "" },
-    { id: 4, nome: "Beatriz Santos Lima", matricula: "2024004", avatar: "" },
-    { id: 5, nome: "Carlos Eduardo Ferreira", matricula: "2024005", avatar: "" },
-    { id: 6, nome: "Mariana Costa Silva", matricula: "2024006", avatar: "" },
-]
+import { academicService } from "@/services/academic.service"
+import { Student, Teacher, Classroom } from "@/services/types"
+import { toast } from "sonner"
 
 export default function EditarTurmaPage() {
     const params = useParams()
-    const turmaId = params?.id ?? 'unknown'
+    const router = useRouter()
+    const turmaId = params?.id ? parseInt(params.id as string) : null
 
-
-    const [alunosSelecionados, setAlunosSelecionados] = useState<typeof mockAlunosDisponiveis>([])
+    const [loading, setLoading] = useState(true)
+    const [submitting, setSubmitting] = useState(false)
+    const [teachers, setTeachers] = useState<Teacher[]>([])
+    const [allStudents, setAllStudents] = useState<Student[]>([])
+    const [alunosSelecionados, setAlunosSelecionados] = useState<Student[]>([])
     const [searchTerm, setSearchTerm] = useState("")
 
+    // Form states
+    const [nome, setNome] = useState("")
+    const [periodo, setPeriodo] = useState("")
+    const [ano, setAno] = useState(new Date().getFullYear())
+    const [professorId, setProfessorId] = useState("")
+    const [status, setStatus] = useState<'ativa' | 'arquivada'>('ativa')
 
-    const alunosDisponiveis = mockAlunosDisponiveis.filter(
-        aluno => !alunosSelecionados.find(a => a.id === aluno.id)
+    useEffect(() => {
+        if (!turmaId) return
+
+        async function loadData() {
+            try {
+                setLoading(true)
+                const [turma, allTeachers, allStudentsRes] = await Promise.all([
+                    academicService.classes.getById(turmaId as number),
+                    academicService.teachers.getAll(),
+                    academicService.students.getAll()
+                ])
+
+                setNome(turma.name)
+                setPeriodo(turma.period)
+                setAno(turma.year)
+                setProfessorId(turma.responsible_teacher?.toString() || "")
+                setStatus(turma.status)
+
+                // Filter students that belong to this classroom
+                const currentStudents = allStudentsRes.results.filter(s => s.classroom === turmaId)
+                setAlunosSelecionados(currentStudents || [])
+
+                setTeachers(allTeachers?.results || [])
+                setAllStudents(allStudentsRes?.results || [])
+            } catch (error) {
+                console.error("Erro ao carregar dados da turma:", error)
+                toast.error("Erro ao carregar dados da turma.")
+                router.push("/turmas")
+            } finally {
+                setLoading(false)
+            }
+        }
+        loadData()
+    }, [turmaId, router])
+
+    const studentsDisponiveis = (allStudents || []).filter(
+        aluno => !(alunosSelecionados || []).find(a => a.id === aluno.id)
     ).filter(
-        aluno => aluno.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            aluno.matricula.includes(searchTerm)
+        aluno => (aluno.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (aluno.registration || "").includes(searchTerm)
     )
 
-    const adicionarAluno = (aluno: typeof mockAlunosDisponiveis[0]) => {
+    const adicionarAluno = (aluno: Student) => {
         setAlunosSelecionados([...alunosSelecionados, aluno])
         setSearchTerm("")
     }
 
     const removerAluno = (alunoId: number) => {
         setAlunosSelecionados(alunosSelecionados.filter(a => a.id !== alunoId))
+    }
+
+    const handleSubmit = async () => {
+        if (!turmaId) return
+        if (!nome || !periodo || !ano) {
+            toast.error("Por favor, preencha todos os campos obrigatórios.")
+            return
+        }
+
+        try {
+            setSubmitting(true)
+            await academicService.classes.update(turmaId, {
+                name: nome,
+                period: periodo as any,
+                year: ano,
+                responsible_teacher: professorId ? parseInt(professorId) : undefined,
+                student_ids: alunosSelecionados.map(a => a.id),
+                status: status
+            })
+            toast.success("Turma atualizada com sucesso!")
+            router.push("/turmas")
+        } catch (error) {
+            console.error("Erro ao atualizar turma:", error)
+            toast.error(academicService.handleError(error))
+        } finally {
+            setSubmitting(false)
+        }
+    }
+
+    if (loading) {
+        return (
+            <div className="flex h-full items-center justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2">Carregando dados...</span>
+            </div>
+        )
     }
 
     return (
@@ -61,7 +134,7 @@ export default function EditarTurmaPage() {
                         Editar Turma
                     </h1>
                     <p className="text-muted-foreground">
-                        Edite as informações e gerencie os alunos da turma (ID: {turmaId})
+                        Edite as informações e gerencie os alunos da turma
                     </p>
                 </div>
             </div>
@@ -80,7 +153,12 @@ export default function EditarTurmaPage() {
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="nome">Nome da Turma</Label>
-                                <Input id="nome" placeholder="Ex: 3º Ano A - Ensino Médio" />
+                                <Input
+                                    id="nome"
+                                    placeholder="Ex: 3º Ano A - Ensino Médio"
+                                    value={nome}
+                                    onChange={(e) => setNome(e.target.value)}
+                                />
                             </div>
 
                             <div className="grid gap-4 md:grid-cols-2">
@@ -88,33 +166,56 @@ export default function EditarTurmaPage() {
                                     <Label htmlFor="periodo">Período</Label>
                                     <select
                                         id="periodo"
+                                        value={periodo}
+                                        onChange={(e) => setPeriodo(e.target.value)}
                                         className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                                     >
                                         <option value="">Selecione...</option>
-                                        <option value="matutino">Matutino</option>
-                                        <option value="vespertino">Vespertino</option>
-                                        <option value="noturno">Noturno</option>
-                                        <option value="integral">Integral</option>
+                                        <option value="Matutino">Matutino</option>
+                                        <option value="Vespertino">Vespertino</option>
+                                        <option value="Noturno">Noturno</option>
+                                        <option value="Integral">Integral</option>
                                     </select>
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="ano">Ano Letivo</Label>
-                                    <Input id="ano" type="number" placeholder="2024" defaultValue="2024" />
+                                    <Input
+                                        id="ano"
+                                        type="number"
+                                        placeholder="2024"
+                                        value={ano}
+                                        onChange={(e) => setAno(parseInt(e.target.value))}
+                                    />
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="professor">Professor Responsável</Label>
-                                <select
-                                    id="professor"
-                                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                >
-                                    <option value="">Selecione...</option>
-                                    <option value="1">Prof. Carlos Eduardo Santos</option>
-                                    <option value="2">Profa. Mariana Costa Lima</option>
-                                    <option value="3">Prof. Roberto Silva Oliveira</option>
-                                    <option value="4">Profa. Ana Paula Ferreira</option>
-                                </select>
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="professor">Professor Responsável</Label>
+                                    <select
+                                        id="professor"
+                                        value={professorId}
+                                        onChange={(e) => setProfessorId(e.target.value)}
+                                        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                    >
+                                        <option value="">Selecione...</option>
+                                        {teachers.map(teacher => (
+                                            <option key={teacher.id} value={teacher.id}>{teacher.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="status">Status</Label>
+                                    <select
+                                        id="status"
+                                        value={status}
+                                        onChange={(e) => setStatus(e.target.value as any)}
+                                        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                    >
+                                        <option value="ativa">Ativa</option>
+                                        <option value="arquivada">Arquivada</option>
+                                    </select>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -144,14 +245,14 @@ export default function EditarTurmaPage() {
                                         >
                                             <div className="flex items-center gap-3">
                                                 <Avatar className="h-8 w-8">
-                                                    <AvatarImage src={aluno.avatar} />
+                                                    <AvatarImage src={aluno.avatar || ""} />
                                                     <AvatarFallback>
-                                                        {aluno.nome.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                                        {aluno.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <p className="font-medium text-sm">{aluno.nome}</p>
-                                                    <p className="text-xs text-muted-foreground">Mat: {aluno.matricula}</p>
+                                                    <p className="font-medium text-sm">{aluno.name}</p>
+                                                    <p className="text-xs text-muted-foreground">Mat: {aluno.registration}</p>
                                                 </div>
                                             </div>
                                             <Button
@@ -167,8 +268,11 @@ export default function EditarTurmaPage() {
                             )}
                         </CardContent>
                         <CardFooter className="flex justify-end gap-2">
-                            <Button variant="outline">Cancelar</Button>
-                            <Button>Salvar Alterações</Button>
+                            <Button variant="outline" onClick={() => router.push("/turmas")}>Cancelar</Button>
+                            <Button onClick={handleSubmit} disabled={submitting}>
+                                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Salvar Alterações
+                            </Button>
                         </CardFooter>
                     </Card>
                 </div>
@@ -194,26 +298,26 @@ export default function EditarTurmaPage() {
                             </div>
 
                             <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                                {alunosDisponiveis.length === 0 ? (
+                                {studentsDisponiveis.length === 0 ? (
                                     <div className="text-center py-4 text-sm text-muted-foreground">
-                                        {searchTerm ? "Nenhum aluno encontrado" : "Todos os alunos foram adicionados"}
+                                        {searchTerm ? "Nenhum aluno encontrado" : "Busque alunos para adicionar"}
                                     </div>
                                 ) : (
-                                    alunosDisponiveis.map((aluno) => (
+                                    studentsDisponiveis.map((aluno) => (
                                         <div
                                             key={aluno.id}
                                             className="flex items-center justify-between p-2 border rounded-lg hover:bg-muted/50 transition-colors"
                                         >
                                             <div className="flex items-center gap-2">
                                                 <Avatar className="h-8 w-8">
-                                                    <AvatarImage src={aluno.avatar} />
+                                                    <AvatarImage src={aluno.avatar || ""} />
                                                     <AvatarFallback className="text-xs">
-                                                        {aluno.nome.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                                        {aluno.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <p className="font-medium text-sm">{aluno.nome}</p>
-                                                    <p className="text-xs text-muted-foreground">{aluno.matricula}</p>
+                                                    <p className="font-medium text-sm">{aluno.name}</p>
+                                                    <p className="text-xs text-muted-foreground">{aluno.registration}</p>
                                                 </div>
                                             </div>
                                             <Button

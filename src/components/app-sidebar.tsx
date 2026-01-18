@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sidebar"
 import { AppSidebarProps } from "@/types/sidebar"
 
-export function AppSidebar({ user, navMain, ...props }: AppSidebarProps) {
+export function AppSidebar({ user, navMain, navSecondary, projects, ...props }: AppSidebarProps) {
   return (
     <Sidebar
       className="top-(--header-height) h-[calc(100svh-var(--header-height))]!"
