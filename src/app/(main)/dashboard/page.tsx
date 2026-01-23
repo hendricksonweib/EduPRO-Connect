@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import Image from "next/image"
 import banner from "@/assets/banner.jpg"
 import {
@@ -27,12 +27,27 @@ import { academicService } from "@/services/academic.service"
 import { DashboardData } from "@/services/types"
 import { Skeleton } from "@/components/ui/skeleton"
 
+const ICON_MAP = {
+  TrendingUp,
+  Users,
+  AlertTriangle,
+  GraduationCap,
+  BarChart3
+} as const
+
+const STATUS_COLORS = {
+  excelente: '[&>div]:bg-green-500',
+  alerta: '[&>div]:bg-red-500',
+  medio: '[&>div]:bg-yellow-500',
+  default: '[&>div]:bg-blue-500'
+} as const
+
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function fetchDashboardData() {
+    const fetchDashboardData = async () => {
       try {
         const stats = await academicService.getDashboardStats()
         setData(stats)
@@ -46,12 +61,22 @@ export default function DashboardPage() {
     fetchDashboardData()
   }, [])
 
+  const getProgressColor = useCallback((status: string) =>
+    STATUS_COLORS[status as keyof typeof STATUS_COLORS] || STATUS_COLORS.default,
+    []
+  )
+
+  const getInitials = useCallback((name: string) =>
+    name.substring(0, 2).toUpperCase(),
+    []
+  )
+
   if (loading) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Skeleton className="h-[200px] w-full rounded-xl" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
+          {Array.from({ length: 4 }, (_, i) => (
             <Skeleton key={i} className="h-[120px] w-full" />
           ))}
         </div>
@@ -66,14 +91,6 @@ export default function DashboardPage() {
   if (!data) return null
 
   const { kpis, performance_per_discipline, ranking_turmas, alunos_destaque } = data
-
-  // Map icon strings to components
-  const iconMap: Record<string, any> = {
-    TrendingUp,
-    Users,
-    AlertTriangle,
-    GraduationCap
-  }
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -95,17 +112,15 @@ export default function DashboardPage() {
             Visão geral do desempenho acadêmico e insights da escola
           </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Badge variant="outline" className="px-3 py-1">
-            Ano Letivo 2025
-          </Badge>
-        </div>
+        <Badge variant="outline" className="px-3 py-1">
+          Ano Letivo 2025
+        </Badge>
       </div>
 
       {/* KPIS */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi, index) => {
-          const IconComponent = iconMap[kpi.icon] || BarChart3
+          const IconComponent = ICON_MAP[kpi.icon as keyof typeof ICON_MAP] || BarChart3
           return (
             <Card key={index}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -153,11 +168,7 @@ export default function DashboardPage() {
                     </div>
                     <Progress
                       value={materia.nota * 10}
-                      className={`h-2 
-                                              ${materia.status === 'excelente' ? '[&>div]:bg-green-500' :
-                          materia.status === 'alerta' ? '[&>div]:bg-red-500' :
-                            materia.status === 'medio' ? '[&>div]:bg-yellow-500' : '[&>div]:bg-blue-500'
-                        }`}
+                      className={`h-2 ${getProgressColor(materia.status)}`}
                     />
                   </div>
                 ))
@@ -223,7 +234,7 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={aluno.avatar} />
-                          <AvatarFallback>{aluno.nome.substring(0, 2).toUpperCase()}</AvatarFallback>
+                          <AvatarFallback>{getInitials(aluno.nome)}</AvatarFallback>
                         </Avatar>
                         <div>
                           <p className="text-sm font-medium leading-none">{aluno.nome}</p>

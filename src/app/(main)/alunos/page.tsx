@@ -1,15 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { MoreHorizontal, Pencil, Trash2, Plus, Search, GraduationCap, Loader2 } from "lucide-react"
+import { useState, useEffect, useCallback, useMemo } from "react"
+import { MoreHorizontal, Pencil, Trash2, Plus, Search, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
-    CardTitle,
 } from "@/components/ui/card"
 import {
     DropdownMenu,
@@ -43,31 +41,33 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
+const getInitials = (name: string) =>
+    name.split(' ').map(n => n[0]).join('').slice(0, 2)
+
 export default function AlunosPage() {
     const [searchTerm, setSearchTerm] = useState("")
     const [alunos, setAlunos] = useState<Student[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [deleteId, setDeleteId] = useState<number | null>(null)
 
-    useEffect(() => {
-        fetchAlunos()
-    }, [])
-
-    const fetchAlunos = async () => {
+    const fetchAlunos = useCallback(async () => {
         try {
             setIsLoading(true)
             const response = await academicService.students.getAll()
             setAlunos(response.results)
         } catch (error: any) {
             console.error("Error fetching students:", error)
-            const message = academicService.handleError(error) || "Erro ao carregar alunos"
-            toast.error(message)
+            toast.error(academicService.handleError(error) || "Erro ao carregar alunos")
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [])
 
-    const handleDelete = async () => {
+    useEffect(() => {
+        fetchAlunos()
+    }, [fetchAlunos])
+
+    const handleDelete = useCallback(async () => {
         if (!deleteId) return
 
         try {
@@ -76,31 +76,28 @@ export default function AlunosPage() {
             setAlunos(prev => prev.filter(a => a.id !== deleteId))
         } catch (error: any) {
             console.error("Error deleting student:", error)
-            const message = academicService.handleError(error) || "Erro ao excluir aluno"
-            toast.error(message)
+            toast.error(academicService.handleError(error) || "Erro ao excluir aluno")
         } finally {
             setDeleteId(null)
         }
-    }
+    }, [deleteId])
 
-    const filteredAlunos = alunos.filter(aluno =>
-        aluno.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        aluno.registration.includes(searchTerm) ||
-        aluno.classroom_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredAlunos = useMemo(() =>
+        alunos.filter(aluno => {
+            const term = searchTerm.toLowerCase()
+            return aluno.name.toLowerCase().includes(term) ||
+                aluno.registration.includes(searchTerm) ||
+                aluno.classroom_name?.toLowerCase().includes(term)
+        }),
+        [alunos, searchTerm]
     )
 
     return (
         <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
             <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                        <GraduationCap className="h-6 w-6" />
-                        Gerenciamento de Alunos
-                    </h1>
-                    <p className="text-muted-foreground">
-                        Gerencie todos os alunos cadastrados no sistema
-                    </p>
-                </div>
+                <h1 className="text-2xl font-bold tracking-tight">
+                    Gerenciamento de Alunos
+                </h1>
                 <Link href="/alunos/novo">
                     <Button>
                         <Plus className="mr-2 h-4 w-4" />
@@ -111,10 +108,6 @@ export default function AlunosPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Lista de Alunos</CardTitle>
-                    <CardDescription>
-                        Visualize, edite ou remova alunos cadastrados
-                    </CardDescription>
                     <div className="flex items-center gap-2 pt-4">
                         <div className="relative flex-1">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -160,7 +153,7 @@ export default function AlunosPage() {
                                                     <Avatar className="h-8 w-8">
                                                         <AvatarImage src={aluno.avatar || ""} />
                                                         <AvatarFallback>
-                                                            {aluno.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                                            {getInitials(aluno.name)}
                                                         </AvatarFallback>
                                                     </Avatar>
                                                     <span className="font-medium">{aluno.name}</span>

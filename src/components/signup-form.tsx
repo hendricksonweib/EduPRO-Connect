@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { cn } from "@/utils/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -23,10 +24,14 @@ export function SignupForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">EduPro</CardTitle>
-          <CardDescription>
-            Connect
-          </CardDescription>
+          <div className="flex justify-center">
+            <Image
+              src="/logo(4).png"
+              alt="Logo"
+              width={200}
+              height={60}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <form>

@@ -80,12 +80,8 @@ export default function TurmasPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                        <BookOpen className="h-6 w-6" />
                         Gerenciamento de Turmas
                     </h1>
-                    <p className="text-muted-foreground">
-                        Gerencie turmas, alunos e matérias
-                    </p>
                 </div>
                 <Link href="/turmas/nova">
                     <Button>
@@ -97,10 +93,6 @@ export default function TurmasPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Lista de Turmas</CardTitle>
-                    <CardDescription>
-                        Visualize, edite ou gerencie turmas e seus conteúdos
-                    </CardDescription>
                     <div className="flex items-center gap-2 pt-4">
                         <div className="relative flex-1">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />

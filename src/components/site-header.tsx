@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { SidebarIcon } from "lucide-react"
 import { SearchForm } from "@/components/search-form"
 import { Button } from "@/components/ui/button"
@@ -21,12 +22,13 @@ export function SiteHeader() {
           <SidebarIcon />
         </Button>
         <Separator orientation="vertical" className="mr-2 h-4" />
-          <div className="flex items-center gap-1 text-center">
-          <h1 className="text-2xl font-bold">EduPro</h1>
-          <p className="text-muted-foreground text-sm text-balance">
-            Connect
-          </p>
-        </div>
+        <Image
+          src="/logo(4).png"
+          alt="Logo"
+          width={150}
+          height={45}
+          priority
+        />
         <SearchForm className="w-full sm:ml-auto sm:w-auto" />
       </div>
     </header>

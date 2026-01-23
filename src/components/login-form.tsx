@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { cn } from "@/utils/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -30,11 +31,15 @@ export function LoginForm({
 
     try {
       await authService.login(username, password)
-      // Redirect to dashboard on successful login
       router.push("/dashboard")
     } catch (err) {
       const errorMessage = apiClient.handleError(err)
-      setError(errorMessage)
+
+      if (errorMessage === "No active account found with the given credentials") {
+        setError("Usuário ou senha incorretos. Por favor, verifique suas credenciais.")
+      } else {
+        setError(errorMessage)
+      }
     } finally {
       setIsLoading(false)
     }
@@ -44,10 +49,13 @@ export function LoginForm({
     <form className={cn("flex flex-col gap-6", className)} {...props} onSubmit={handleSubmit}>
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
-          <h1 className="text-2xl font-bold">EduPro</h1>
-          <p className="text-muted-foreground text-sm text-balance">
-            Connect
-          </p>
+          <Image
+            src="/logo(4).png"
+            alt="Logo"
+            width={200}
+            height={60}
+            priority
+          />
         </div>
         {error && (
           <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
@@ -64,6 +72,7 @@ export function LoginForm({
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             disabled={isLoading}
+            aria-invalid={!!error}
           />
         </Field>
         <Field>
@@ -78,6 +87,7 @@ export function LoginForm({
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={isLoading}
+            aria-invalid={!!error}
           />
         </Field>
         <Field>

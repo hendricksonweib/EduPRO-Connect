@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
@@ -26,10 +26,9 @@ export default function MainLayout({
                 const userData = await authService.getCurrentUser()
                 setUser(userData)
             } catch (error) {
-                // If fetching user fails (e.g., token invalid/expired), clear tokens and redirect
                 console.error('Failed to fetch user:', error)
                 authService.logout()
-                router.push('/login')
+                router.push('/')
             } finally {
                 setIsLoading(false)
             }
@@ -37,6 +36,21 @@ export default function MainLayout({
 
         fetchUser()
     }, [router])
+
+    const sidebarUser = useMemo(() => {
+        if (!user) return null
+
+        const fullName = [user.first_name, user.last_name]
+            .filter(Boolean)
+            .join(' ')
+            .trim()
+
+        return {
+            name: fullName || user.username,
+            email: user.email,
+            avatar: user.avatar || "",
+        }
+    }, [user])
 
     if (isLoading) {
         return (
@@ -46,18 +60,7 @@ export default function MainLayout({
         )
     }
 
-    if (!user) {
-        return null // Will redirect to login
-    }
-
-    // Format user data for sidebar
-    const sidebarUser = {
-        name: user.first_name && user.last_name
-            ? `${user.first_name} ${user.last_name}`.trim()
-            : user.username,
-        email: user.email,
-        avatar: user.avatar || "",
-    }
+    if (!sidebarUser) return null
 
     return (
         <div className="[--header-height:calc(--spacing(14))]">

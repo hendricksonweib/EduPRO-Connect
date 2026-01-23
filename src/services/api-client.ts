@@ -82,7 +82,7 @@ class ApiClient {
                 } catch (e) {
                     this.clearTokens();
                     if (typeof window !== 'undefined') {
-                        window.location.href = '/login';
+                        window.location.href = '/';
                     }
                     throw e;
                 }
