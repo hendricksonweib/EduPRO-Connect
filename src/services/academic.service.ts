@@ -12,6 +12,8 @@ import type {
     Grade,
     DashboardData,
     PaginatedResponse,
+    ClassroomSubject,
+    LearningContent,
 } from './types';
 
 export const academicService = {
@@ -104,6 +106,58 @@ export const academicService = {
 
         async delete(id: number): Promise<void> {
             return apiClient.delete<void>(`/academic/subjects/${id}/`);
+        },
+    },
+
+    // Classroom Subjects (Matérias da Turma)
+    classroomSubjects: {
+        async getAll(classroomId?: number): Promise<PaginatedResponse<ClassroomSubject>> {
+            const url = classroomId
+                ? `/academic/classroom-subjects/?classroom=${classroomId}`
+                : '/academic/classroom-subjects/';
+            return apiClient.get<PaginatedResponse<ClassroomSubject>>(url);
+        },
+
+        async getById(id: number): Promise<ClassroomSubject> {
+            return apiClient.get<ClassroomSubject>(`/academic/classroom-subjects/${id}/`);
+        },
+
+        async create(data: Partial<ClassroomSubject>): Promise<ClassroomSubject> {
+            return apiClient.post<ClassroomSubject>('/academic/classroom-subjects/', data);
+        },
+
+        async update(id: number, data: Partial<ClassroomSubject>): Promise<ClassroomSubject> {
+            return apiClient.patch<ClassroomSubject>(`/academic/classroom-subjects/${id}/`, data);
+        },
+
+        async delete(id: number): Promise<void> {
+            return apiClient.delete<void>(`/academic/classroom-subjects/${id}/`);
+        },
+    },
+
+    // Learning Contents (Conteúdos de Aprendizagem)
+    learningContents: {
+        async getAll(classroomSubjectId?: number): Promise<PaginatedResponse<LearningContent>> {
+            const url = classroomSubjectId
+                ? `/academic/learning-contents/?classroom_subject=${classroomSubjectId}`
+                : '/academic/learning-contents/';
+            return apiClient.get<PaginatedResponse<LearningContent>>(url);
+        },
+
+        async getById(id: number): Promise<LearningContent> {
+            return apiClient.get<LearningContent>(`/academic/learning-contents/${id}/`);
+        },
+
+        async create(data: FormData | Partial<LearningContent>): Promise<LearningContent> {
+            return apiClient.post<LearningContent>('/academic/learning-contents/', data);
+        },
+
+        async update(id: number, data: FormData | Partial<LearningContent>): Promise<LearningContent> {
+            return apiClient.patch<LearningContent>(`/academic/learning-contents/${id}/`, data);
+        },
+
+        async delete(id: number): Promise<void> {
+            return apiClient.delete<void>(`/academic/learning-contents/${id}/`);
         },
     },
 

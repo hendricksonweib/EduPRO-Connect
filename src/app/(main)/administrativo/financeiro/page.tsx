@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
     DollarSign,
     FileText,
@@ -9,8 +9,15 @@ import {
     CheckCircle2,
     Calendar as CalendarIcon,
     ChevronRight,
-    Loader2
+    Loader2,
+    TrendingUp,
+    TrendingDown,
+    Clock,
+    AlertCircle,
+    UserCircle,
+    Download
 } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
     Card,
@@ -156,6 +163,65 @@ export default function FinanceiroPage() {
     })
 
 
+    // Calcular estatísticas financeiras
+    const stats = useMemo(() => {
+        let total = 0
+        let pago = 0
+        let pendente = 0
+        let atrasado = 0
+
+        alunosFinanceiro.forEach(aluno => {
+            aluno.historico.forEach(m => {
+                total += m.valor
+                if (m.status === 'pago') pago += m.valor
+                else if (m.status === 'pendente') pendente += m.valor
+                else if (m.status === 'atrasado') atrasado += m.valor
+            })
+        })
+
+        const formatCurrency = (val: number) =>
+            new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
+
+        return [
+            {
+                title: "Receita Total",
+                value: formatCurrency(total),
+                description: "Volume total histórico",
+                icon: DollarSign,
+                color: "text-blue-600",
+                bg: "bg-blue-100/50",
+                gradient: "from-blue-500/10 to-blue-500/5"
+            },
+            {
+                title: "Recebido",
+                value: formatCurrency(pago),
+                description: "Total pago com sucesso",
+                icon: TrendingUp,
+                color: "text-emerald-600",
+                bg: "bg-emerald-100/50",
+                gradient: "from-emerald-500/10 to-emerald-500/5"
+            },
+            {
+                title: "Em Aberto",
+                value: formatCurrency(pendente),
+                description: "Aguardando pagamento",
+                icon: Clock,
+                color: "text-amber-600",
+                bg: "bg-amber-100/50",
+                gradient: "from-amber-500/10 to-amber-500/5"
+            },
+            {
+                title: "Inadimplência",
+                value: formatCurrency(atrasado),
+                description: "Mensalidades em atraso",
+                icon: AlertCircle,
+                color: "text-rose-600",
+                bg: "bg-rose-100/50",
+                gradient: "from-rose-500/10 to-rose-500/5"
+            }
+        ]
+    }, [alunosFinanceiro])
+
     const handleOpenHistorico = (aluno: AlunoFinanceiro) => {
         setSelectedAluno(aluno)
         setIsSheetOpen(true)
@@ -175,103 +241,165 @@ export default function FinanceiroPage() {
     }
 
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-            <div className="flex items-center justify-between">
+        <div className="flex-1 space-y-8 p-4 md:p-8 pt-6">
+            {/* Header com Breadcrumbs */}
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                        <DollarSign className="h-6 w-6" />
+                    <div className="flex items-center gap-2 text-sm text-primary/80 mb-2 font-medium">
+                        <Link href="/dashboard" className="hover:text-primary transition-colors">
+                            Dashboard
+                        </Link>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                        <span className="text-muted-foreground">Administrativo</span>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                        <span className="text-muted-foreground">Financeiro</span>
+                    </div>
+                    <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                         Controle Financeiro
                     </h1>
-                    <p className="text-muted-foreground">
-                        Gerencie pagamentos e visualize históricos por aluno
+                    <p className="text-muted-foreground mt-1">
+                        Gerencie pagamentos, visualize históricos e controle a inadimplência.
                     </p>
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="outline" className="shadow-sm active:scale-95 transition-all">
+                        <Download className="mr-2 h-4 w-4" />
+                        Exportar Relatório
+                    </Button>
                 </div>
             </div>
 
-            {/* Tabela Principal */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Alunos e Mensalidades</CardTitle>
-                    <CardDescription>
-                        Clique em um aluno para ver o histórico completo e anexar comprovantes
-                    </CardDescription>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {stats.map((stat, index) => (
+                    <Card key={index} className={`overflow-hidden border-none shadow-md bg-gradient-to-br ${stat.gradient}`}>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground">
+                                {stat.title}
+                            </CardTitle>
+                            <div className={`rounded-xl p-2 ${stat.bg} ${stat.color} shadow-sm`}>
+                                <stat.icon className="h-4 w-4" />
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{stat.value}</div>
+                            <p className="text-xs text-muted-foreground mt-1 font-medium">
+                                {stat.description}
+                            </p>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
 
-                    <div className="flex flex-col md:flex-row gap-4 pt-4">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            {/* Tabela Principal */}
+            <Card className="border-none shadow-xl bg-card/60 backdrop-blur-sm overflow-hidden">
+                <CardHeader className="border-b bg-muted/30 pb-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                                <DollarSign className="h-5 w-5 text-primary" />
+                                Mensalidades por Aluno
+                            </CardTitle>
+                            <CardDescription>
+                                Clique em um registro para gerenciar o histórico financeiro
+                            </CardDescription>
+                        </div>
+                        <div className="relative w-full md:w-80">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
-                                placeholder="Buscar aluno..."
-                                className="pl-8"
+                                placeholder="Buscar por aluno ou matrícula..."
+                                className="pl-9 bg-background/50 border-muted-foreground/20 focus-visible:ring-primary transition-all shadow-sm"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                     {isLoading ? (
-                        <div className="flex h-32 items-center justify-center">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <div className="flex h-64 flex-col items-center justify-center gap-4">
+                            <Loader2 className="h-10 w-10 animate-spin text-primary/60" />
+                            <p className="text-muted-foreground animate-pulse font-medium">Carregando dados financeiros...</p>
                         </div>
                     ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Aluno</TableHead>
-                                    <TableHead>Último Registro</TableHead>
-                                    <TableHead>Valor</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Ações</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {alunosListagem.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                                            Nenhum registro encontrado
-                                        </TableCell>
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="bg-muted/30 hover:bg-muted/30 border-none">
+                                        <TableHead className="py-4 font-bold text-foreground pl-6">Aluno</TableHead>
+                                        <TableHead className="py-4 font-bold text-foreground">Último Registro</TableHead>
+                                        <TableHead className="py-4 font-bold text-foreground">Valor</TableHead>
+                                        <TableHead className="py-4 font-bold text-foreground">Status</TableHead>
+                                        <TableHead className="py-4 font-bold text-foreground text-right pr-6">Ações</TableHead>
                                     </TableRow>
-                                ) : (
-                                    alunosListagem.map((item) => (
-                                        <TableRow
-                                            key={item.id}
-                                            className="cursor-pointer hover:bg-muted/50 transition-colors"
-                                            onClick={() => handleOpenHistorico(item)}
-                                        >
-                                            <TableCell>
-                                                <div className="flex items-center gap-3">
-                                                    <Avatar className="h-8 w-8">
-                                                        <AvatarImage src={item.avatar} />
-                                                        <AvatarFallback>{item.aluno.substring(0, 2).toUpperCase()}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium">{item.aluno}</span>
-                                                        <span className="text-xs text-muted-foreground">{item.turma}</span>
-                                                    </div>
+                                </TableHeader>
+                                <TableBody>
+                                    {alunosListagem.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-center py-20">
+                                                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                                    <DollarSign className="h-12 w-12 opacity-20" />
+                                                    <p className="text-lg font-medium">Nenhum registro encontrado</p>
+                                                    <p className="text-sm">Tente ajustar seus termos de busca</p>
                                                 </div>
                                             </TableCell>
-                                            <TableCell>{item.ultimaMensalidade.mes}</TableCell>
-                                            <TableCell>
-                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.ultimaMensalidade.valor)}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    variant={item.ultimaMensalidade.status === 'pago' ? 'default' : item.ultimaMensalidade.status === 'atrasado' ? 'destructive' : 'secondary'}
-                                                    className={item.ultimaMensalidade.status === 'pago' ? 'bg-green-600 hover:bg-green-600' : ''}
-                                                >
-                                                    {item.ultimaMensalidade.status === 'pago' ? 'Pago' : item.ultimaMensalidade.status === 'atrasado' ? 'Em Atraso' : 'Pendente'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="ghost" size="sm">
-                                                    Histórico <ChevronRight className="ml-2 h-4 w-4" />
-                                                </Button>
-                                            </TableCell>
                                         </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
+                                    ) : (
+                                        alunosListagem.map((item) => (
+                                            <TableRow
+                                                key={item.id}
+                                                className="group cursor-pointer hover:bg-muted/40 transition-colors border-b border-muted/20"
+                                                onClick={() => handleOpenHistorico(item)}
+                                            >
+                                                <TableCell className="pl-6 py-4">
+                                                    <div className="flex items-center gap-4">
+                                                        <Avatar className="h-10 w-10 border-2 border-background shadow-sm group-hover:scale-105 transition-transform">
+                                                            <AvatarImage src={item.avatar} />
+                                                            <AvatarFallback className="bg-primary/5 text-primary font-bold">
+                                                                {item.aluno.substring(0, 2).toUpperCase()}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="flex flex-col">
+                                                            <span className="font-bold text-foreground group-hover:text-primary transition-colors">{item.aluno}</span>
+                                                            <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                                                                <UserCircle className="h-3 w-3" />
+                                                                {item.turma}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                                                        <CalendarIcon className="h-3.5 w-3.5 text-primary/40" />
+                                                        {item.ultimaMensalidade.mes}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <span className="font-bold text-foreground">
+                                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.ultimaMensalidade.valor)}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge
+                                                        variant={item.ultimaMensalidade.status === 'pago' ? 'default' : item.ultimaMensalidade.status === 'atrasado' ? 'destructive' : 'secondary'}
+                                                        className={`px-3 py-1 rounded-full font-semibold shadow-sm ${item.ultimaMensalidade.status === 'pago' ? 'bg-emerald-500 hover:bg-emerald-600' :
+                                                            item.ultimaMensalidade.status === 'atrasado' ? 'bg-rose-500 hover:bg-rose-600' : ''
+                                                            }`}
+                                                    >
+                                                        {item.ultimaMensalidade.status === 'pago' ? 'Pago' : item.ultimaMensalidade.status === 'atrasado' ? 'Em Atraso' : 'Pendente'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right pr-6">
+                                                    <Button variant="ghost" size="sm" className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors group/btn font-semibold">
+                                                        Ver Detalhes
+                                                        <ChevronRight className="ml-1.5 h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
                     )}
                 </CardContent>
             </Card>

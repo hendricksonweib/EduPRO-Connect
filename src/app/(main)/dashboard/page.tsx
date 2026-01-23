@@ -11,8 +11,13 @@ import {
   Trophy,
   GraduationCap,
   AlertTriangle,
-  BarChart3
+  BarChart3,
+  LayoutGrid,
+  School,
+  Clock
 } from "lucide-react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -93,7 +98,22 @@ export default function DashboardPage() {
   const { kpis, performance_per_discipline, ranking_turmas, alunos_destaque } = data
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+    <div className="flex-1 space-y-8 p-4 md:p-8 pt-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <div className="flex items-center gap-2 text-sm text-primary/80 mb-2 font-medium">
+            <span className="text-muted-foreground font-semibold">Dashboard</span>
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            Dashboard Pedagógico
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm md:text-base">
+            Bem-vindo ao EduPro! Aqui está o resumo do desempenho acadêmico.
+          </p>
+        </div>
+      </div>
+
       {/* Banner Section */}
       <div className="relative w-full rounded-xl overflow-hidden shadow-sm">
         <Image
@@ -105,35 +125,32 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard Pedagógico</h1>
-          <p className="text-muted-foreground">
-            Visão geral do desempenho acadêmico e insights da escola
-          </p>
-        </div>
-        <Badge variant="outline" className="px-3 py-1">
-          Ano Letivo 2025
-        </Badge>
-      </div>
-
-      {/* KPIS */}
+      {/* KPIS com design premium */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi, index) => {
           const IconComponent = ICON_MAP[kpi.icon as keyof typeof ICON_MAP] || BarChart3
+          // Mapear cores para gradientes
+          const gradients: Record<string, string> = {
+            'text-blue-600': 'from-blue-500/10 to-blue-500/5',
+            'text-green-600': 'from-emerald-500/10 to-emerald-500/5',
+            'text-red-500': 'from-rose-500/10 to-rose-500/5',
+            'text-purple-600': 'from-purple-500/10 to-purple-500/5'
+          }
+          const gradientClass = gradients[kpi.color] || 'from-primary/10 to-primary/5'
+
           return (
-            <Card key={index}>
+            <Card key={index} className={`overflow-hidden border-none shadow-md bg-gradient-to-br ${gradientClass} transition-all hover:scale-[1.02] cursor-default group`}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
+                <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">
                   {kpi.title}
                 </CardTitle>
-                <div className={`p-2 rounded-full ${kpi.bg}`}>
-                  <IconComponent className={`h-4 w-4 ${kpi.color}`} />
+                <div className={`p-2.5 rounded-xl ${kpi.bg} ${kpi.color} shadow-sm group-hover:scale-110 transition-transform`}>
+                  <IconComponent className="h-4 w-4" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{kpi.value}</div>
-                <p className="text-xs text-muted-foreground mt-1">
+                <div className="text-3xl font-bold tracking-tight">{kpi.value}</div>
+                <p className="text-xs text-muted-foreground mt-1.5 font-medium flex items-center gap-1">
                   {kpi.description}
                 </p>
               </CardContent>
@@ -142,117 +159,140 @@ export default function DashboardPage() {
         })}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
         {/* Desempenho por Matéria */}
-        <Card className="col-span-4">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Desempenho por Disciplina
-            </CardTitle>
-            <CardDescription>
-              Média geral das notas dos alunos nas principais disciplinas
-            </CardDescription>
+        <Card className="col-span-4 border-none shadow-xl bg-card/60 backdrop-blur-sm overflow-hidden flex flex-col">
+          <CardHeader className="border-b bg-muted/20 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  Desempenho por Disciplina
+                </CardTitle>
+                <CardDescription>
+                  Média geral das notas nos principais componentes curriculares
+                </CardDescription>
+              </div>
+              <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/10">
+                Ver Tudo
+              </Button>
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
+          <CardContent className="flex-1 p-6">
+            <div className="space-y-7">
               {performance_per_discipline.length > 0 ? (
                 performance_per_discipline.map((materia) => (
-                  <div key={materia.nome} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="font-medium">{materia.nome}</div>
+                  <div key={materia.nome} className="group">
+                    <div className="flex items-center justify-between text-sm mb-2 font-medium">
+                      <div className="flex items-center gap-2 group-hover:text-primary transition-colors">
+                        <div className="h-2 w-2 rounded-full bg-primary/40 group-hover:bg-primary transition-all group-hover:scale-150" />
+                        {materia.nome}
+                      </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold">{materia.nota}</span>
-                        <span className="text-muted-foreground text-xs">/ 10</span>
+                        <span className="font-bold text-base">{materia.nota}</span>
+                        <span className="text-muted-foreground text-xs font-normal">/ 10</span>
                       </div>
                     </div>
-                    <Progress
-                      value={materia.nota * 10}
-                      className={`h-2 ${getProgressColor(materia.status)}`}
-                    />
+                    <div className="relative">
+                      <Progress
+                        value={materia.nota * 10}
+                        className={`h-2.5 bg-muted rounded-full overflow-hidden ${getProgressColor(materia.status)}`}
+                      />
+                      <div
+                        className="absolute inset-x-0 bottom-0 top-0 opacity-0 group-hover:opacity-10 pointer-events-none transition-opacity bg-white"
+                        style={{ width: `${materia.nota * 10}%` }}
+                      />
+                    </div>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-center text-muted-foreground py-10">Nenhum dado de desempenho disponível.</p>
+                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+                  <BarChart3 className="h-12 w-12 opacity-10 mb-2" />
+                  <p className="text-sm font-medium">Nenhum dado de desempenho disponível</p>
+                </div>
               )}
             </div>
           </CardContent>
         </Card>
 
         {/* Ranking de Turmas e Alunos */}
-        <Card className="col-span-3">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-500" />
-              Destaques do Mês
-            </CardTitle>
-            <CardDescription>
-              Turmas e alunos com melhor desempenho
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-8">
-            {/* Melhor Turma */}
-            <div>
-              <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                Melhores Turmas (Média Geral)
-              </h4>
-              <div className="space-y-3">
-                {ranking_turmas.length > 0 ? (
-                  ranking_turmas.map((turma, i) => (
-                    <div key={i} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center font-bold text-muted-foreground w-6">
-                          {i + 1}º
-                        </div>
-                        <div>
-                          <div className="font-medium text-sm">{turma.nome}</div>
-                          <div className="text-xs text-muted-foreground">{turma.alunos} alunos</div>
-                        </div>
+        <div className="col-span-3 space-y-6">
+          {/* Melhores Turmas */}
+          <Card className="border-none shadow-lg bg-card/60 backdrop-blur-sm overflow-hidden">
+            <CardHeader className="pb-3 border-b border-muted/20 bg-muted/10">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-amber-500" />
+                Top Turmas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-4">
+              {ranking_turmas.length > 0 ? (
+                ranking_turmas.map((turma, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-muted/30 hover:bg-muted/50 rounded-xl transition-all border border-transparent hover:border-primary/5 cursor-default group">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-background shadow-sm font-bold text-xs text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                        {i + 1}º
                       </div>
-                      <Badge variant="secondary" className="bg-background">
-                        {turma.media}
-                      </Badge>
+                      <div>
+                        <div className="font-bold text-sm tracking-tight">{turma.nome}</div>
+                        <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{turma.alunos} alunos</div>
+                      </div>
                     </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-muted-foreground">Nenhuma turma ranqueada.</p>
-                )}
-              </div>
-            </div>
+                    <Badge variant="secondary" className="bg-background/80 backdrop-blur-none font-bold text-primary px-2.5">
+                      {turma.media}
+                    </Badge>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-center text-muted-foreground py-4 italic">Nenhuma turma ranqueada.</p>
+              )}
+            </CardContent>
+          </Card>
 
-            {/* Top Alunos */}
-            <div>
-              <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <GraduationCap className="h-4 w-4 text-muted-foreground" />
+          {/* Alunos Destaque */}
+          <Card className="border-none shadow-lg bg-card/60 backdrop-blur-sm overflow-hidden flex-1">
+            <CardHeader className="pb-3 border-b border-muted/20 bg-muted/10">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <GraduationCap className="h-4 w-4 text-blue-500" />
                 Alunos Destaque
-              </h4>
-              <div className="space-y-4">
-                {alunos_destaque.length > 0 ? (
-                  alunos_destaque.map((aluno, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-5">
+              {alunos_destaque.length > 0 ? (
+                alunos_destaque.map((aluno, i) => (
+                  <div key={i} className="flex items-center justify-between group">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <Avatar className="h-9 w-9 border-2 border-background shadow-sm hover:scale-105 transition-transform">
                           <AvatarImage src={aluno.avatar} />
-                          <AvatarFallback>{getInitials(aluno.nome)}</AvatarFallback>
+                          <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{getInitials(aluno.nome)}</AvatarFallback>
                         </Avatar>
-                        <div>
-                          <p className="text-sm font-medium leading-none">{aluno.nome}</p>
-                          <p className="text-xs text-muted-foreground">{aluno.turma}</p>
-                        </div>
+                        {i === 0 && <div className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-amber-400 rounded-full border-2 border-background flex items-center justify-center text-[8px] text-white">🏆</div>}
                       </div>
-                      <div className="font-bold text-sm text-green-600">
+                      <div>
+                        <p className="text-sm font-bold leading-none tracking-tight group-hover:text-primary transition-colors">{aluno.nome}</p>
+                        <p className="text-[11px] text-muted-foreground font-medium mt-1 flex items-center gap-1">
+                          <School className="h-2.5 w-2.5" />
+                          {aluno.turma}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-0.5">
+                      <div className="font-bold text-sm text-emerald-600">
                         {aluno.media}
                       </div>
+                      <div className="h-1 w-12 bg-emerald-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500" style={{ width: `${(aluno.media / 10) * 100}%` }} />
+                      </div>
                     </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-muted-foreground">Nenhum aluno em destaque.</p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-center text-muted-foreground py-4 italic">Nenhum aluno em destaque.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )

@@ -118,6 +118,34 @@ export interface Subject {
     updated_at: string;
 }
 
+export interface ClassroomSubject {
+    id: number;
+    classroom: number;
+    classroom_name?: string;
+    subject: number;
+    subject_name?: string;
+    teacher?: number;
+    teacher_name?: string;
+    total_contents?: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface LearningContent {
+    id: number;
+    classroom_subject: number;
+    title: string;
+    description?: string;
+    content_type: 'pdf' | 'video' | 'link' | 'other';
+    file?: string | null;
+    file_url?: string | null;
+    external_url?: string | null;
+    file_size?: number;
+    views?: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
 export interface Grade {
     id: number;
     student: number;
