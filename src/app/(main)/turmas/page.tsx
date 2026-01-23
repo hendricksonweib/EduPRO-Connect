@@ -10,7 +10,6 @@ import {
     BookOpen,
     Users,
     FileText,
-    Loader2,
     Calendar,
     GraduationCap,
     BarChart3,
@@ -55,6 +54,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { DetailSheet, type DetailSection } from "@/components/detail-sheet"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function TurmasPage() {
     const [searchTerm, setSearchTerm] = useState("")
@@ -154,12 +154,35 @@ export default function TurmasPage() {
         ]
     }, [selectedClassroom])
 
-    if (loading) {
+    if (loading && turmas.length === 0) {
         return (
-            <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                    <p className="text-muted-foreground animate-pulse font-medium">Carregando turmas...</p>
+            <div className="flex-1 space-y-8 p-4 md:p-8 pt-6">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <div className="flex items-center gap-2 mb-2">
+                            <Skeleton className="h-4 w-20" />
+                            <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                            <Skeleton className="h-4 w-16" />
+                        </div>
+                        <Skeleton className="h-9 w-64 mb-2" />
+                        <Skeleton className="h-5 w-80" />
+                    </div>
+                    <Skeleton className="h-11 w-44 rounded-xl" />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-4">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+                    ))}
+                </div>
+
+                <div className="flex flex-col gap-6">
+                    <Skeleton className="h-11 w-full max-w-md rounded-xl" />
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {Array.from({ length: 9 }).map((_, i) => (
+                            <Skeleton key={i} className="h-80 w-full rounded-[2.5rem]" />
+                        ))}
+                    </div>
                 </div>
             </div>
         )

@@ -99,30 +99,45 @@ export default function DashboardPage() {
 
   return (
     <div className="flex-1 space-y-8 p-4 md:p-8 pt-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-sm text-primary/80 mb-2 font-medium">
-            <span className="text-muted-foreground font-semibold">Dashboard</span>
+      {/* Header Simplificado */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground/80 font-medium">
+          <span>Dashboards</span>
+          <span className="h-1 w-1 rounded-full bg-muted-foreground/30" />
+          <span className="text-primary font-semibold">Dashboard</span>
+        </div>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+              Dashboard Pedagógico
+            </h1>
+            <p className="text-muted-foreground text-sm font-medium">
+              Acompanhamento completo do desempenho escolar em tempo real.
+            </p>
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Dashboard Pedagógico
-          </h1>
-          <p className="text-muted-foreground mt-1 text-sm md:text-base">
-            Bem-vindo ao EduPro! Aqui está o resumo do desempenho acadêmico.
-          </p>
         </div>
       </div>
 
-      {/* Banner Section */}
-      <div className="relative w-full rounded-xl overflow-hidden shadow-sm">
+      {/* Banner de Boas-vindas Premium */}
+      <div className="relative h-48 w-full rounded-2xl overflow-hidden shadow-lg ring-1 ring-black/5 group">
         <Image
           src={banner}
           alt="Dashboard Banner"
-          className="w-full h-auto object-cover max-h-[200px]"
-          placeholder="blur"
+          fill
+          className="object-cover transition-transform duration-700 group-hover:scale-105"
           priority
         />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent flex flex-col justify-center px-8 border-b border-white/10">
+          <Badge className="w-fit mb-3 bg-primary/20 hover:bg-primary/30 text-white border-white/20 backdrop-blur-md px-3 py-1 font-bold">
+            Visão Geral
+          </Badge>
+          <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">
+            Gestão Inteligente EduPro
+          </h2>
+          <p className="text-white/80 max-w-lg text-sm font-medium leading-relaxed">
+            Seja bem-vindo ao seu centro de controle acadêmico. Monitore o crescimento e tome decisões baseadas em dados reais.
+          </p>
+        </div>
       </div>
 
       {/* KPIS com design premium */}
