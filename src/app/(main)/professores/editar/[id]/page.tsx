@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Upload, User, Briefcase, CreditCard, FileText, MapPin, GraduationCap } from "lucide-react"
+import { Upload, User, Briefcase, CreditCard, FileText, MapPin, GraduationCap, ChevronRight } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
     Card,
@@ -131,6 +132,13 @@ export default function EditarProfessorPage() {
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
             <div className="flex items-center justify-between">
                 <div>
+                    <div className="flex items-center gap-2 text-sm text-primary/80 mb-2 font-medium">
+                        <Link href="/professores" className="hover:text-primary transition-colors">
+                            Professores
+                        </Link>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                        <span className="text-muted-foreground">Editar Professor</span>
+                    </div>
                     <h1 className="text-2xl font-bold tracking-tight">Editar Professor</h1>
                     <p className="text-muted-foreground">ID: {professorId} - {formData.registration}</p>
                 </div>

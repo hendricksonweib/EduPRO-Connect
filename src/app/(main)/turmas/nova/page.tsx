@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { BookOpen, Users, X, Plus, Search, Loader2 } from "lucide-react"
+import { BookOpen, Users, X, Plus, Search, Loader2, ChevronRight } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
     Card,
@@ -108,6 +109,13 @@ export default function NovaTurmaPage() {
         <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
             <div className="flex items-center justify-between">
                 <div>
+                    <div className="flex items-center gap-2 text-sm text-primary/80 mb-2 font-medium">
+                        <Link href="/turmas" className="hover:text-primary transition-colors">
+                            Turmas
+                        </Link>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                        <span className="text-muted-foreground">Nova Turma</span>
+                    </div>
                     <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
                         <BookOpen className="h-6 w-6" />
                         Nova Turma

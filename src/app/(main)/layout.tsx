@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/sidebar"
 import { sidebarData } from "./sidebar-data"
 import { authService, type User } from "@/services"
+import { LogoLoading } from "@/components/logo-loading"
 
 export default function MainLayout({
     children,
@@ -26,10 +27,9 @@ export default function MainLayout({
                 const userData = await authService.getCurrentUser()
                 setUser(userData)
             } catch (error) {
-                // If fetching user fails (e.g., token invalid/expired), clear tokens and redirect
                 console.error('Failed to fetch user:', error)
                 authService.logout()
-                router.push('/login')
+                router.push('/')
             } finally {
                 setIsLoading(false)
             }
@@ -38,25 +38,27 @@ export default function MainLayout({
         fetchUser()
     }, [router])
 
-    if (isLoading) {
+    const sidebarUser = useMemo(() => {
+        if (!user) return null
+
+        const fullName = [user.first_name, user.last_name]
+            .filter(Boolean)
+            .join(' ')
+            .trim()
+
+        return {
+            name: fullName || user.username,
+            email: user.email,
+            avatar: user.avatar || "",
+        }
+    }, [user])
+
+    if (isLoading || !sidebarUser) {
         return (
-            <div className="flex h-screen items-center justify-center">
-                <div className="text-muted-foreground">Carregando...</div>
+            <div className="flex h-screen w-screen items-center justify-center bg-background">
+                <LogoLoading size={200} />
             </div>
         )
-    }
-
-    if (!user) {
-        return null // Will redirect to login
-    }
-
-    // Format user data for sidebar
-    const sidebarUser = {
-        name: user.first_name && user.last_name
-            ? `${user.first_name} ${user.last_name}`.trim()
-            : user.username,
-        email: user.email,
-        avatar: user.avatar || "",
     }
 
     return (

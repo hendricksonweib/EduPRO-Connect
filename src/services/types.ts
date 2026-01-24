@@ -41,6 +41,8 @@ export interface PaginatedResponse<T> {
     count: number;
     next: string | null;
     previous: string | null;
+    total_pages: number;
+    current_page: number;
     results: T[];
 }
 
@@ -118,6 +120,34 @@ export interface Subject {
     updated_at: string;
 }
 
+export interface ClassroomSubject {
+    id: number;
+    classroom: number;
+    classroom_name?: string;
+    subject: number;
+    subject_name?: string;
+    teacher?: number;
+    teacher_name?: string;
+    total_contents?: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface LearningContent {
+    id: number;
+    classroom_subject: number;
+    title: string;
+    description?: string;
+    content_type: 'pdf' | 'video' | 'link' | 'other';
+    file?: string | null;
+    file_url?: string | null;
+    external_url?: string | null;
+    file_size?: number;
+    views?: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
 export interface Grade {
     id: number;
     student: number;
@@ -166,12 +196,17 @@ export interface DashboardData {
 export interface MonthlyFee {
     id: number;
     student: number;
-    amount: number;
+    student_name?: string;
+    student_registration?: string;
+    student_class?: string;
+    month: string;
     due_date: string;
-    paid: boolean;
-    payment_date?: string;
-    created_at: string;
-    updated_at: string;
+    value: string;
+    status: 'pago' | 'atrasado' | 'pendente';
+    payment_date?: string | null;
+    proof_of_payment?: string | null;
+    created_at?: string;
+    updated_at?: string;
 }
 
 // Calendar types

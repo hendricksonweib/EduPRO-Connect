@@ -56,6 +56,10 @@ export const sidebarData = {
                     url: "/administrativo/funcionarios",
                 },
                 {
+                    title: "Matérias",
+                    url: "/administrativo/materias",
+                },
+                {
                     title: "Financeiro",
                     url: "/administrativo/financeiro",
                 },

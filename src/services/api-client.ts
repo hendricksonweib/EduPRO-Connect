@@ -9,6 +9,8 @@ import type { ApiError } from './types';
 
 class ApiClient {
     private baseUrl: string = env.apiUrl;
+    private requestCache = new Map<string, { data: any; timestamp: number }>();
+    private CACHE_TTL = 5000; // 5 seconds
 
     // Token management
     public getAccessToken(): string | null {
@@ -30,9 +32,21 @@ class ApiClient {
     public clearTokens(): void {
         Cookies.remove('access_token', { path: '/' });
         Cookies.remove('refresh_token', { path: '/' });
+        this.requestCache.clear();
     }
 
     private async request<T>(url: string, options: RequestInit = {}): Promise<T> {
+        const method = options.method || 'GET';
+        const cacheKey = `${method}:${url}`;
+
+        // Check cache for GET requests
+        if (method === 'GET') {
+            const cached = this.requestCache.get(cacheKey);
+            if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+                return cached.data as T;
+            }
+        }
+
         const fullUrl = `${this.baseUrl}${url}`;
         const headers = new Headers(options.headers || {});
 
@@ -82,7 +96,7 @@ class ApiClient {
                 } catch (e) {
                     this.clearTokens();
                     if (typeof window !== 'undefined') {
-                        window.location.href = '/login';
+                        window.location.href = '/';
                     }
                     throw e;
                 }
@@ -103,15 +117,22 @@ class ApiClient {
 
         // Use response.text() first to handle empty responses
         const text = await response.text();
-        return text ? JSON.parse(text) : {} as T;
+        const data = text ? JSON.parse(text) : {} as T;
+
+        // Cache successful GET requests
+        if (method === 'GET') {
+            this.requestCache.set(cacheKey, { data, timestamp: Date.now() });
+        }
+
+        return data;
     }
 
     // HTTP methods
-    public async get<T>(url: string, options: RequestInit = {}) {
+    public async get<T>(url: string, options: RequestInit & { next?: NextFetchRequestConfig } = {}) {
         return this.request<T>(url, { ...options, method: 'GET' });
     }
 
-    public async post<T>(url: string, data?: unknown, options: RequestInit = {}) {
+    public async post<T>(url: string, data?: unknown, options: RequestInit & { next?: NextFetchRequestConfig } = {}) {
         return this.request<T>(url, {
             ...options,
             method: 'POST',
@@ -119,7 +140,7 @@ class ApiClient {
         });
     }
 
-    public async put<T>(url: string, data?: unknown, options: RequestInit = {}) {
+    public async put<T>(url: string, data?: unknown, options: RequestInit & { next?: NextFetchRequestConfig } = {}) {
         return this.request<T>(url, {
             ...options,
             method: 'PUT',
@@ -127,7 +148,7 @@ class ApiClient {
         });
     }
 
-    public async patch<T>(url: string, data?: unknown, options: RequestInit = {}) {
+    public async patch<T>(url: string, data?: unknown, options: RequestInit & { next?: NextFetchRequestConfig } = {}) {
         return this.request<T>(url, {
             ...options,
             method: 'PATCH',
@@ -135,7 +156,7 @@ class ApiClient {
         });
     }
 
-    public async delete<T>(url: string, options: RequestInit = {}) {
+    public async delete<T>(url: string, options: RequestInit & { next?: NextFetchRequestConfig } = {}) {
         return this.request<T>(url, { ...options, method: 'DELETE' });
     }
 

@@ -58,7 +58,7 @@ export function NavUser({
 
   const handleLogout = () => {
     authService.logout()
-    router.push("/login")
+    router.push("/")
   }
 
   return (
