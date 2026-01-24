@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { Users, ArrowLeft, Save, Loader2, Upload, User as UserIcon, Shield, Mail, UserPlus, Key } from "lucide-react"
+import { Users, ArrowLeft, Save, Loader2, Upload, User as UserIcon, Shield, Mail, UserPlus, Key, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
@@ -159,6 +159,15 @@ export default function NovoFuncionarioPage() {
                     </Button>
                 </Link>
                 <div>
+                    <div className="flex items-center gap-2 text-sm text-primary/80 mb-2 font-medium">
+                        <span className="text-muted-foreground">Administrativo</span>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                        <Link href="/administrativo/funcionarios" className="hover:text-primary transition-colors">
+                            Funcionários
+                        </Link>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                        <span className="text-muted-foreground">{isEditing ? "Editar" : "Novo"}</span>
+                    </div>
                     <h1 className="text-2xl font-bold tracking-tight">
                         {isEditing ? "Editar Funcionário" : "Novo Funcionário"}
                     </h1>

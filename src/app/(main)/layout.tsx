@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/sidebar"
 import { sidebarData } from "./sidebar-data"
 import { authService, type User } from "@/services"
+import { LogoLoading } from "@/components/logo-loading"
 
 export default function MainLayout({
     children,
@@ -52,15 +53,13 @@ export default function MainLayout({
         }
     }, [user])
 
-    if (isLoading) {
+    if (isLoading || !sidebarUser) {
         return (
-            <div className="flex h-screen items-center justify-center">
-                <div className="text-muted-foreground">Carregando...</div>
+            <div className="flex h-screen w-screen items-center justify-center bg-background">
+                <LogoLoading size={200} />
             </div>
         )
     }
-
-    if (!sidebarUser) return null
 
     return (
         <div className="[--header-height:calc(--spacing(14))]">

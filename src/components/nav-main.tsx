@@ -3,6 +3,7 @@
 import { ChevronRight, type LucideIcon } from "lucide-react"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useMemo, useCallback } from "react"
+import Link from "next/link"
 
 import {
   Collapsible,
@@ -65,10 +66,10 @@ export function NavMain({ items }: { items: NavItem[] }) {
             <Collapsible key={item.title} asChild defaultOpen={isActive} className="group/collapsible">
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
-                  <a href={item.url}>
+                  <Link href={item.url}>
                     <item.icon />
                     <span>{item.title}</span>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
                 {item.items?.length && (
                   <>
@@ -88,9 +89,9 @@ export function NavMain({ items }: { items: NavItem[] }) {
                             <Collapsible key={subItem.title} asChild defaultOpen={isSubActive} className="group/collapsible">
                               <SidebarMenuSubItem>
                                 <SidebarMenuSubButton asChild isActive={isSubActive}>
-                                  <a href={subItem.url}>
+                                  <Link href={subItem.url}>
                                     <span>{subItem.title}</span>
-                                  </a>
+                                  </Link>
                                 </SidebarMenuSubButton>
                                 {subItem.items?.length && (
                                   <>
@@ -105,9 +106,9 @@ export function NavMain({ items }: { items: NavItem[] }) {
                                         {subItem.items.map((subSubItem) => (
                                           <SidebarMenuSubItem key={subSubItem.title}>
                                             <SidebarMenuSubButton asChild isActive={checkIsActive(subSubItem.url)}>
-                                              <a href={subSubItem.url}>
+                                              <Link href={subSubItem.url}>
                                                 <span>{subSubItem.title}</span>
-                                              </a>
+                                              </Link>
                                             </SidebarMenuSubButton>
                                           </SidebarMenuSubItem>
                                         ))}

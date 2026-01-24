@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Upload, User, FileText, MapPin, Users, DollarSign, Calendar, Loader2 } from "lucide-react"
+import { Upload, User, FileText, MapPin, Users, DollarSign, Calendar, Loader2, ChevronRight } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
     Card,
@@ -123,6 +124,13 @@ export default function EditarAlunoPage() {
         <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
             <div className="flex items-center justify-between">
                 <div>
+                    <div className="flex items-center gap-2 text-sm text-primary/80 mb-2 font-medium">
+                        <Link href="/alunos" className="hover:text-primary transition-colors">
+                            Alunos
+                        </Link>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                        <span className="text-muted-foreground">Editar Aluno</span>
+                    </div>
                     <h1 className="text-2xl font-bold tracking-tight">Editar Aluno</h1>
                     <p className="text-muted-foreground">Matrícula: {formData.registration}</p>
                 </div>

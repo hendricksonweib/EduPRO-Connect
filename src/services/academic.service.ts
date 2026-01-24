@@ -19,8 +19,8 @@ import type {
 export const academicService = {
     // Students
     students: {
-        async getAll(): Promise<PaginatedResponse<Student>> {
-            return apiClient.get<PaginatedResponse<Student>>('/academic/students/');
+        async getAll(page: number = 1, limit: number = 10): Promise<PaginatedResponse<Student>> {
+            return apiClient.get<PaginatedResponse<Student>>(`/academic/students/?page=${page}&page_size=${limit}`);
         },
 
         async getById(id: number): Promise<Student> {
@@ -42,8 +42,8 @@ export const academicService = {
 
     // Teachers
     teachers: {
-        async getAll(): Promise<PaginatedResponse<Teacher>> {
-            return apiClient.get<PaginatedResponse<Teacher>>('/academic/teachers/');
+        async getAll(page: number = 1, limit: number = 10): Promise<PaginatedResponse<Teacher>> {
+            return apiClient.get<PaginatedResponse<Teacher>>(`/academic/teachers/?page=${page}&page_size=${limit}`);
         },
 
         async getById(id: number): Promise<Teacher> {
@@ -65,8 +65,8 @@ export const academicService = {
 
     // Classes
     classes: {
-        async getAll(): Promise<PaginatedResponse<Classroom>> {
-            return apiClient.get<PaginatedResponse<Classroom>>('/academic/classes/');
+        async getAll(page: number = 1, limit: number = 10): Promise<PaginatedResponse<Classroom>> {
+            return apiClient.get<PaginatedResponse<Classroom>>(`/academic/classes/?page=${page}&page_size=${limit}`);
         },
 
         async getById(id: number): Promise<Classroom> {
@@ -88,8 +88,8 @@ export const academicService = {
 
     // Subjects
     subjects: {
-        async getAll(): Promise<PaginatedResponse<Subject>> {
-            return apiClient.get<PaginatedResponse<Subject>>('/academic/subjects/');
+        async getAll(page: number = 1, limit: number = 10): Promise<PaginatedResponse<Subject>> {
+            return apiClient.get<PaginatedResponse<Subject>>(`/academic/subjects/?page=${page}&page_size=${limit}`);
         },
 
         async getById(id: number): Promise<Subject> {

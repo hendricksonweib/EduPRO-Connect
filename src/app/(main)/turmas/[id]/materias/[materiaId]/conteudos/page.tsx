@@ -68,6 +68,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { DetailSheet, type DetailSection } from "@/components/detail-sheet"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const TIPO_ICONS = {
     pdf: FileType,
@@ -105,6 +106,15 @@ const formatDate = (dateString?: string) => {
     })
 }
 
+const getYouTubeEmbedUrl = (url: string) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11)
+        ? `https://www.youtube.com/embed/${match[2]}`
+        : null;
+}
+
 export default function ConteudosPage() {
     const params = useParams()
     const turmaId = Number(params?.id)
@@ -118,6 +128,7 @@ export default function ConteudosPage() {
     const [dialogOpen, setDialogOpen] = useState(false)
     const [deleteId, setDeleteId] = useState<number | null>(null)
     const [selectedContent, setSelectedContent] = useState<LearningContent | null>(null)
+    const [previewItem, setPreviewItem] = useState<LearningContent | null>(null)
 
     // Form state
     const [formData, setFormData] = useState({
@@ -273,12 +284,40 @@ export default function ConteudosPage() {
         ]
     }, [selectedContent])
 
-    if (isLoading) {
+    if (isLoading && conteudos.length === 0) {
         return (
-            <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                    <p className="text-muted-foreground animate-pulse font-medium">Carregando conteúdos...</p>
+            <div className="flex flex-1 flex-col gap-8 p-4 md:p-8 pt-6">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <div className="flex items-center gap-2 mb-2">
+                            <Skeleton className="h-4 w-20" />
+                            <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                            <Skeleton className="h-4 w-24" />
+                            <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                            <Skeleton className="h-4 w-24" />
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                            <Skeleton className="h-9 w-64" />
+                        </div>
+                        <Skeleton className="h-6 w-48 mt-2 ml-12" />
+                    </div>
+                    <Skeleton className="h-11 w-44 rounded-xl" />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-4">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+                    ))}
+                </div>
+
+                <div className="space-y-4">
+                    <Skeleton className="h-11 w-full max-w-md rounded-xl" />
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <Skeleton key={i} className="h-64 w-full rounded-[2rem]" />
+                        ))}
+                    </div>
                 </div>
             </div>
         )
@@ -494,8 +533,11 @@ export default function ConteudosPage() {
                                                 <DropdownMenuContent align="end" className="rounded-xl">
                                                     <DropdownMenuLabel>Ações</DropdownMenuLabel>
                                                     <DropdownMenuSeparator />
+                                                    <DropdownMenuItem onClick={() => setPreviewItem(conteudo)}>
+                                                        <Eye className="mr-2 h-4 w-4" /> Visualizar
+                                                    </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => setSelectedContent(conteudo)}>
-                                                        <Eye className="mr-2 h-4 w-4" /> Detalhes
+                                                        <Layers className="mr-2 h-4 w-4" /> Detalhes
                                                     </DropdownMenuItem>
                                                     {conteudo.file_url && (
                                                         <DropdownMenuItem asChild>
@@ -514,7 +556,7 @@ export default function ConteudosPage() {
                                     </CardHeader>
                                     <CardContent className="flex-1 space-y-4">
                                         <div>
-                                            <CardTitle className="text-xl line-clamp-2 leading-tight group-hover:text-primary transition-colors cursor-pointer" onClick={() => setSelectedContent(conteudo)}>
+                                            <CardTitle className="text-xl line-clamp-2 leading-tight group-hover:text-primary transition-colors cursor-pointer" onClick={() => setPreviewItem(conteudo)}>
                                                 {conteudo.title}
                                             </CardTitle>
                                             <p className="text-sm text-muted-foreground mt-2 line-clamp-2 italic">
@@ -539,27 +581,158 @@ export default function ConteudosPage() {
                                             {formatDate(conteudo.created_at)}
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            {conteudo.external_url ? (
-                                                <Button size="sm" variant="outline" className="rounded-full h-8 px-4" asChild>
-                                                    <a href={conteudo.external_url} target="_blank" rel="noopener noreferrer">
-                                                        Visualizar <ExternalLink className="ml-2 h-3 w-3" />
-                                                    </a>
-                                                </Button>
-                                            ) : (
-                                                <Button size="sm" variant="default" className="rounded-full h-8 px-4" asChild>
-                                                    <a href={conteudo.file_url || '#'} download>
-                                                        Baixar <Download className="ml-2 h-3 w-3" />
-                                                    </a>
-                                                </Button>
-                                            )}
+                                            <Button size="sm" variant="outline" className="rounded-full h-8 px-4" onClick={() => setPreviewItem(conteudo)}>
+                                                {conteudo.content_type === 'pdf' || conteudo.content_type === 'video' ? 'Visualizar' : 'Acessar'} <Eye className="ml-2 h-3 w-3" />
+                                            </Button>
                                         </div>
                                     </CardFooter>
                                 </Card>
                             )
                         })
                     )}
+
                 </div>
             </div>
+
+            {/* Preview Dialog */}
+            <Dialog open={!!previewItem} onOpenChange={(open) => !open && setPreviewItem(null)}>
+                <DialogContent className="sm:max-w-[90vw] md:max-w-[85vw] lg:max-w-[1100px] h-[90vh] p-0 overflow-hidden flex flex-col rounded-[2rem] border-none shadow-[0_0_50px_-12px_rgba(0,0,0,0.3)]">
+                    <DialogHeader className="p-6 bg-muted/30 border-b relative">
+                        <div className="flex items-center gap-4">
+                            {previewItem && (
+                                <div className={`p-3 rounded-2xl ${TIPO_COLORS[previewItem.content_type as keyof typeof TIPO_COLORS] || ""}`}>
+                                    {(() => {
+                                        const Icon = TIPO_ICONS[previewItem.content_type as keyof typeof TIPO_ICONS] || FileText
+                                        return <Icon className="h-6 w-6" />
+                                    })()}
+                                </div>
+                            )}
+                            <div className="pr-8">
+                                <DialogTitle className="text-2xl font-bold tracking-tight">{previewItem?.title}</DialogTitle>
+                                <DialogDescription className="text-sm font-medium mt-0.5">
+                                    {previewItem ? TIPO_LABELS[previewItem.content_type as keyof typeof TIPO_LABELS] : ""} • {classroomSubject?.subject_name}
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+
+                    <div className="flex-1 bg-background relative overflow-hidden">
+                        {previewItem?.content_type === 'pdf' && (
+                            <iframe
+                                src={`${previewItem.file_url}#toolbar=0`}
+                                className="w-full h-full border-none"
+                                title={previewItem.title}
+                            />
+                        )}
+
+                        {previewItem?.content_type === 'video' && (() => {
+                            const embedUrl = getYouTubeEmbedUrl(previewItem.external_url || "");
+                            if (embedUrl) {
+                                return (
+                                    <div className="w-full h-full bg-black flex items-center justify-center">
+                                        <iframe
+                                            src={embedUrl}
+                                            className="w-full h-full aspect-video border-none"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                            title={previewItem.title}
+                                        />
+                                    </div>
+                                );
+                            }
+                            return (
+                                <div className="flex flex-col items-center justify-center h-full p-12 text-center space-y-6">
+                                    <div className="p-6 rounded-full bg-blue-100 dark:bg-blue-900/20">
+                                        <Video className="h-12 w-12 text-blue-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-bold mb-2">Vídeo Externo</h3>
+                                        <p className="text-muted-foreground max-w-sm mx-auto">
+                                            Este vídeo reside em uma plataforma externa que não permite incorporação direta.
+                                        </p>
+                                    </div>
+                                    <Button size="lg" className="rounded-xl px-8" asChild>
+                                        <a href={previewItem?.external_url || ""} target="_blank" rel="noopener noreferrer">
+                                            Ver na Plataforma Original <ExternalLink className="ml-2 h-4 w-4" />
+                                        </a>
+                                    </Button>
+                                </div>
+                            );
+                        })()}
+
+                        {previewItem?.content_type === 'link' && (
+                            <div className="flex flex-col items-center justify-center h-full p-12 text-center space-y-8">
+                                <div className="p-8 rounded-full bg-emerald-100 dark:bg-emerald-900/20 relative">
+                                    <LinkIcon className="h-16 w-16 text-emerald-600" />
+                                    <div className="absolute -top-1 -right-1 h-6 w-6 bg-background rounded-full flex items-center justify-center border-2 border-emerald-600">
+                                        <ExternalLink className="h-3 w-3 text-emerald-600" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="text-3xl font-bold mb-4">Link de Estudo</h3>
+                                    <p className="text-muted-foreground max-w-lg mx-auto text-lg leading-relaxed">
+                                        Você está prestes a abrir um recurso externo. Os materiais em links externos podem conter leituras complementares recomendadas.
+                                    </p>
+                                </div>
+                                <div className="flex flex-col items-center gap-4 w-full">
+                                    <Button size="lg" className="rounded-2xl px-12 h-14 text-lg shadow-xl shadow-emerald-500/10" asChild>
+                                        <a href={previewItem?.external_url || ""} target="_blank" rel="noopener noreferrer">
+                                            Abrir Conteúdo <ExternalLink className="ml-2 h-5 w-5" />
+                                        </a>
+                                    </Button>
+                                    <div className="px-6 py-2 bg-muted rounded-full text-[10px] font-mono text-muted-foreground select-all opacity-60 hover:opacity-100 transition-opacity">
+                                        {previewItem?.external_url}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {previewItem?.content_type === 'other' && (
+                            <div className="flex flex-col items-center justify-center h-full p-12 text-center space-y-8">
+                                <div className="p-8 rounded-full bg-amber-100 dark:bg-amber-900/20">
+                                    <FileText className="h-16 w-16 text-amber-600" />
+                                </div>
+                                <div>
+                                    <h3 className="text-3xl font-bold mb-4">Download Necessário</h3>
+                                    <p className="text-muted-foreground max-w-lg mx-auto text-lg leading-relaxed">
+                                        Este tipo de arquivo ({previewItem?.file_url?.split('.').pop()?.toUpperCase()}) deve ser baixado para visualização em seu computador ou tablet.
+                                    </p>
+                                </div>
+                                <Button size="lg" className="rounded-2xl px-12 h-14 text-lg shadow-xl shadow-amber-500/10" asChild>
+                                    <a href={previewItem?.file_url || ""} download>
+                                        Baixar agora <Download className="ml-2 h-5 w-5" />
+                                    </a>
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="px-8 py-5 border-t bg-muted/20 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div className="flex items-center gap-4 text-sm font-medium">
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                                <Calendar className="h-4 w-4" />
+                                <span>{previewItem && formatDate(previewItem.created_at)}</span>
+                            </div>
+                            <div className="h-4 w-px bg-muted-foreground/20 hidden md:block" />
+                            <div className="text-foreground/70">
+                                {previewItem?.description || "Sem descrição disponível."}
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            {previewItem?.file_url && (
+                                <Button variant="outline" size="sm" className="rounded-xl px-4" asChild>
+                                    <a href={previewItem.file_url} download>
+                                        <Download className="mr-2 h-4 w-4" /> Salvar Cópia
+                                    </a>
+                                </Button>
+                            )}
+                            <Button className="rounded-xl px-6 min-w-[120px]" onClick={() => setPreviewItem(null)}>
+                                Fechar
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* Content Details Sheet */}
             <DetailSheet

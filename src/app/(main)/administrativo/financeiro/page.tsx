@@ -9,6 +9,7 @@ import {
     CheckCircle2,
     Calendar as CalendarIcon,
     ChevronRight,
+    ChevronLeft,
     Loader2,
     TrendingUp,
     TrendingDown,
@@ -25,6 +26,7 @@ import {
     CardDescription,
     CardHeader,
     CardTitle,
+    CardFooter,
 } from "@/components/ui/card"
 import {
     Table,
@@ -51,7 +53,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { financialService } from "@/services"
+import { financialService, academicService } from "@/services"
 import { toast } from "sonner"
 
 // Tipos para melhor organização
@@ -83,64 +85,90 @@ export default function FinanceiroPage() {
     const [isSheetOpen, setIsSheetOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [alunosFinanceiro, setAlunosFinanceiro] = useState<AlunoFinanceiro[]>([])
+    const [currentPage, setCurrentPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(1)
+    const [totalItems, setTotalItems] = useState(0)
+    const [globalStats, setGlobalStats] = useState({ total: 0, pago: 0, pendente: 0, atrasado: 0 })
 
     // Fetch data from API
     useEffect(() => {
-        fetchFinancialData()
-    }, [])
+        fetchFinancialData(currentPage)
+    }, [currentPage])
 
-    const fetchFinancialData = async () => {
+    const fetchFinancialData = async (page: number = 1) => {
         try {
             setIsLoading(true)
-            const response = await financialService.fees.getAll()
 
-            // Group fees by student
-            const groupedData: Record<number, AlunoFinanceiro> = {}
+            // Parallel fetch for summary stats and paginated students
+            const [statsRes, studentsResponse] = await Promise.all([
+                financialService.fees.getSummary(),
+                academicService.students.getAll(page, 10)
+            ])
 
-            response.results.forEach((fee: any) => {
-                const studentId = fee.student
+            setGlobalStats(statsRes)
 
-                if (!groupedData[studentId]) {
-                    groupedData[studentId] = {
-                        id: studentId,
-                        aluno: fee.student_name,
-                        matricula: fee.student_registration || "N/A",
-                        turma: fee.student_class || "N/A",
-                        avatar: "", // API doesn't send avatar yet in serializer, assume empty
-                        historico: []
-                    }
+            const students = studentsResponse.results
+            setTotalPages(studentsResponse.total_pages)
+            setTotalItems(studentsResponse.count)
+            setCurrentPage(studentsResponse.current_page)
+
+            // For the selected students on this page, fetch their fees
+            // Optimization: Fetch all fees for these students specifically if backend supports it.
+            const feesResponse = await financialService.fees.getAll(1, 1000)
+            const fees = feesResponse.results
+
+            // Map students to the AlunoFinanceiro structure
+            const studentMap: Record<number, AlunoFinanceiro> = {}
+
+            students.forEach(student => {
+                studentMap[student.id] = {
+                    id: student.id,
+                    aluno: student.name,
+                    matricula: student.registration,
+                    turma: student.classroom_name || "N/A",
+                    avatar: student.avatar || "",
+                    historico: []
                 }
-
-                // Format date dd/mm/yyyy
-                const formatDate = (dateString: string) => {
-                    if (!dateString) return null
-                    const [year, month, day] = dateString.split('-')
-                    return `${day}/${month}/${year}`
-                }
-
-                groupedData[studentId].historico.push({
-                    id: fee.id,
-                    mes: fee.month,
-                    vencimento: formatDate(fee.due_date) || "",
-                    valor: parseFloat(fee.value),
-                    status: fee.status as StatusPagamento,
-                    comprovante: fee.proof_of_payment,
-                    dataPagamento: formatDate(fee.payment_date)
-                })
             })
 
-            // Converter object to array and sort history
-            const dataArray = Object.values(groupedData).map(aluno => {
-                // Sort history by due date descending (assuming simple string comparison works for YYYY-MM-DD but here we formatted it. 
-                // Better to sort by ID or keep raw date. For now, rely on insertion order or backend order).
+            // Format date dd/mm/yyyy
+            const formatDate = (dateString: string) => {
+                if (!dateString) return null
+                const parts = dateString.split('-')
+                if (parts.length !== 3) return dateString
+                const [year, month, day] = parts
+                return `${day}/${month}/${year}`
+            }
+
+            // Distribute fees to students on this page
+            fees.forEach((fee: any) => {
+                const studentId = fee.student
+                if (studentMap[studentId]) {
+                    studentMap[studentId].historico.push({
+                        id: fee.id,
+                        mes: fee.month,
+                        vencimento: formatDate(fee.due_date) || "",
+                        valor: parseFloat(fee.value),
+                        status: fee.status as StatusPagamento,
+                        comprovante: fee.proof_of_payment,
+                        dataPagamento: formatDate(fee.payment_date)
+                    })
+                }
+            })
+
+            // Converter object to array
+            const dataArray = Object.values(studentMap).map(aluno => {
+                aluno.historico.sort((a, b) => b.id - a.id)
                 return aluno
             })
 
             setAlunosFinanceiro(dataArray)
+            return dataArray
 
         } catch (error: any) {
             console.error("Error fetching financial data:", error)
             toast.error("Erro ao carregar dados financeiros")
+            return []
         } finally {
             setIsLoading(false)
         }
@@ -163,29 +191,15 @@ export default function FinanceiroPage() {
     })
 
 
-    // Calcular estatísticas financeiras
+    // Calcular estatísticas financeiras (usando dados globais do backend)
     const stats = useMemo(() => {
-        let total = 0
-        let pago = 0
-        let pendente = 0
-        let atrasado = 0
-
-        alunosFinanceiro.forEach(aluno => {
-            aluno.historico.forEach(m => {
-                total += m.valor
-                if (m.status === 'pago') pago += m.valor
-                else if (m.status === 'pendente') pendente += m.valor
-                else if (m.status === 'atrasado') atrasado += m.valor
-            })
-        })
-
         const formatCurrency = (val: number) =>
             new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
 
         return [
             {
                 title: "Receita Total",
-                value: formatCurrency(total),
+                value: formatCurrency(globalStats.total),
                 description: "Volume total histórico",
                 icon: DollarSign,
                 color: "text-blue-600",
@@ -194,7 +208,7 @@ export default function FinanceiroPage() {
             },
             {
                 title: "Recebido",
-                value: formatCurrency(pago),
+                value: formatCurrency(globalStats.pago),
                 description: "Total pago com sucesso",
                 icon: TrendingUp,
                 color: "text-emerald-600",
@@ -203,7 +217,7 @@ export default function FinanceiroPage() {
             },
             {
                 title: "Em Aberto",
-                value: formatCurrency(pendente),
+                value: formatCurrency(globalStats.pendente),
                 description: "Aguardando pagamento",
                 icon: Clock,
                 color: "text-amber-600",
@@ -212,7 +226,7 @@ export default function FinanceiroPage() {
             },
             {
                 title: "Inadimplência",
-                value: formatCurrency(atrasado),
+                value: formatCurrency(globalStats.atrasado),
                 description: "Mensalidades em atraso",
                 icon: AlertCircle,
                 color: "text-rose-600",
@@ -220,24 +234,43 @@ export default function FinanceiroPage() {
                 gradient: "from-rose-500/10 to-rose-500/5"
             }
         ]
-    }, [alunosFinanceiro])
+    }, [globalStats])
 
     const handleOpenHistorico = (aluno: AlunoFinanceiro) => {
         setSelectedAluno(aluno)
         setIsSheetOpen(true)
     }
 
-    const handleUploadComprovante = (feeId: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    const [isUploading, setIsUploading] = useState<number | null>(null)
+
+    const handleUploadComprovante = async (feeId: number, event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]
         if (!file || !selectedAluno) return
 
-        toast.info("Upload de comprovante em desenvolvimento (Frontend only for now)")
+        try {
+            setIsUploading(feeId)
+            const formData = new FormData()
+            formData.append('proof_of_payment', file)
 
-        // Em um cenário real:
-        // const formData = new FormData()
-        // formData.append('proof_of_payment', file)
-        // await financialService.fees.uploadProof(feeId, formData)
-        // fetchFinancialData()
+            await financialService.fees.uploadProof(feeId, formData)
+
+            toast.success("Comprovante enviado com sucesso!")
+
+            // Refresh data to reflect changes
+            const newData = await fetchFinancialData()
+
+            // Update the selected aluno in the sheet to show paid status
+            if (newData) {
+                const updated = newData.find(a => a.id === selectedAluno.id)
+                if (updated) setSelectedAluno(updated)
+            }
+
+        } catch (error: any) {
+            console.error("Error uploading proof:", error)
+            toast.error("Erro ao enviar comprovante")
+        } finally {
+            setIsUploading(null)
+        }
     }
 
     return (
@@ -246,10 +279,6 @@ export default function FinanceiroPage() {
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                     <div className="flex items-center gap-2 text-sm text-primary/80 mb-2 font-medium">
-                        <Link href="/dashboard" className="hover:text-primary transition-colors">
-                            Dashboard
-                        </Link>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
                         <span className="text-muted-foreground">Administrativo</span>
                         <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
                         <span className="text-muted-foreground">Financeiro</span>
@@ -402,105 +431,157 @@ export default function FinanceiroPage() {
                         </div>
                     )}
                 </CardContent>
-            </Card>
 
-            {/* Histórico Lateral (Sheet) */}
-            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetContent className="sm:max-w-xl w-full overflow-y-auto">
-                    {selectedAluno && (
-                        <>
-                            <SheetHeader className="mb-6">
-                                <div className="flex items-center gap-4">
-                                    <Avatar className="h-16 w-16 border-2 border-primary/10">
-                                        <AvatarImage src={selectedAluno.avatar} />
-                                        <AvatarFallback className="text-xl">{selectedAluno.aluno.substring(0, 2).toUpperCase()}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <SheetTitle className="text-xl">{selectedAluno.aluno}</SheetTitle>
-                                        <SheetDescription>
-                                            {selectedAluno.turma} • Matrícula: {selectedAluno.matricula}
-                                        </SheetDescription>
-                                    </div>
-                                </div>
-                            </SheetHeader>
+            {totalPages > 1 && (
+                <CardFooter className="border-t bg-muted/20 px-6 py-4 flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground font-medium">
+                        Mostrando <span className="text-foreground font-bold">{alunosFinanceiro.length}</span> de <span className="text-foreground font-bold">{totalItems}</span> alunos
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1 || isLoading}
+                            className="rounded-xl transition-all active:scale-95"
+                        >
+                            <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+                        </Button>
+                        <div className="flex items-center gap-1 mx-2">
+                            <span className="text-sm font-bold text-primary">{currentPage}</span>
+                            <span className="text-sm text-muted-foreground">/</span>
+                            <span className="text-sm font-medium text-muted-foreground">{totalPages}</span>
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={currentPage === totalPages || isLoading}
+                            className="rounded-xl transition-all active:scale-95"
+                        >
+                            Próximo <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                    </div>
+                </CardFooter>
+            )}
+        </Card>
 
-                            <div className="space-y-6">
-                                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Histórico de Pagamentos</h3>
-
-                                <div className="space-y-4">
-                                    {selectedAluno.historico.map((mensalidade, index) => (
-                                        <Card key={index} className={`border-l-4 ${mensalidade.status === 'pago' ? 'border-l-green-500' :
-                                            mensalidade.status === 'atrasado' ? 'border-l-red-500' :
-                                                'border-l-yellow-500'
-                                            }`}>
-                                            <CardContent className="p-4">
-                                                <div className="flex items-start justify-between mb-4">
-                                                    <div>
-                                                        <p className="font-semibold text-lg">{mensalidade.mes}</p>
-                                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                            <CalendarIcon className="h-3.5 w-3.5" />
-                                                            Vencimento: {mensalidade.vencimento}
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="font-bold text-lg">
-                                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(mensalidade.valor)}
-                                                        </p>
-                                                        <Badge
-                                                            variant={mensalidade.status === 'pago' ? 'default' : 'outline'}
-                                                            className={
-                                                                mensalidade.status === 'pago' ? 'bg-green-600' :
-                                                                    mensalidade.status === 'atrasado' ? 'text-red-500 border-red-200 bg-red-50' :
-                                                                        'text-yellow-600 border-yellow-200 bg-yellow-50'
-                                                            }
-                                                        >
-                                                            {mensalidade.status === 'pago' ? 'PAGO' : mensalidade.status === 'atrasado' ? 'EM ATRASO' : 'PENDENTE'}
-                                                        </Badge>
-                                                    </div>
-                                                </div>
-
-                                                <div className="pt-2 border-t">
-                                                    {mensalidade.status === 'pago' ? (
-                                                        <div className="flex items-center justify-between text-sm">
-                                                            <div className="flex items-center gap-2 text-green-700">
-                                                                <CheckCircle2 className="h-4 w-4" />
-                                                                <span>Pago em {mensalidade.dataPagamento || "Data N/A"}</span>
-                                                            </div>
-                                                            <Button variant="ghost" size="sm" className="h-8">
-                                                                <FileText className="mr-2 h-3.5 w-3.5" />
-                                                                Ver Comprovante
-                                                            </Button>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-sm text-muted-foreground italic">
-                                                                Nenhum comprovante
-                                                            </span>
-
-                                                            {/* Simulação do Input de Arquivo */}
-                                                            <div className="relative">
-                                                                <Input
-                                                                    type="file"
-                                                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                                                    onChange={(e) => handleUploadComprovante(mensalidade.id, e)}
-                                                                />
-                                                                <Button size="sm" variant="outline" className="border-dashed border-2 hover:bg-muted/50">
-                                                                    <Upload className="mr-2 h-3.5 w-3.5" />
-                                                                    Anexar
-                                                                </Button>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    ))}
-                                </div>
+            {/* Histórico Lateral (Sheet) */ }
+    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="sm:max-w-xl w-full overflow-y-auto">
+            {selectedAluno && (
+                <>
+                    <SheetHeader className="mb-6">
+                        <div className="flex items-center gap-4">
+                            <Avatar className="h-16 w-16 border-2 border-primary/10">
+                                <AvatarImage src={selectedAluno.avatar} />
+                                <AvatarFallback className="text-xl">{selectedAluno.aluno.substring(0, 2).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <SheetTitle className="text-xl">{selectedAluno.aluno}</SheetTitle>
+                                <SheetDescription>
+                                    {selectedAluno.turma} • Matrícula: {selectedAluno.matricula}
+                                </SheetDescription>
                             </div>
-                        </>
-                    )}
-                </SheetContent>
-            </Sheet>
-        </div>
+                        </div>
+                    </SheetHeader>
+
+                    <div className="space-y-6">
+                        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Histórico de Pagamentos</h3>
+
+                        <div className="space-y-4">
+                            {selectedAluno.historico.map((mensalidade, index) => (
+                                <Card key={index} className={`border-l-4 ${mensalidade.status === 'pago' ? 'border-l-green-500' :
+                                    mensalidade.status === 'atrasado' ? 'border-l-red-500' :
+                                        'border-l-yellow-500'
+                                    }`}>
+                                    <CardContent className="p-4">
+                                        <div className="flex items-start justify-between mb-4">
+                                            <div>
+                                                <p className="font-semibold text-lg">{mensalidade.mes}</p>
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                    <CalendarIcon className="h-3.5 w-3.5" />
+                                                    Vencimento: {mensalidade.vencimento}
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-bold text-lg">
+                                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(mensalidade.valor)}
+                                                </p>
+                                                <Badge
+                                                    variant={mensalidade.status === 'pago' ? 'default' : 'outline'}
+                                                    className={
+                                                        mensalidade.status === 'pago' ? 'bg-green-600' :
+                                                            mensalidade.status === 'atrasado' ? 'text-red-500 border-red-200 bg-red-50' :
+                                                                'text-yellow-600 border-yellow-200 bg-yellow-50'
+                                                    }
+                                                >
+                                                    {mensalidade.status === 'pago' ? 'PAGO' : mensalidade.status === 'atrasado' ? 'EM ATRASO' : 'PENDENTE'}
+                                                </Badge>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-2 border-t">
+                                            {mensalidade.status === 'pago' ? (
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <div className="flex items-center gap-2 text-green-700">
+                                                        <CheckCircle2 className="h-4 w-4" />
+                                                        <span>Pago em {mensalidade.dataPagamento || "Data N/A"}</span>
+                                                    </div>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-8"
+                                                        onClick={() => {
+                                                            if (mensalidade.comprovante) {
+                                                                window.open(mensalidade.comprovante, '_blank')
+                                                            }
+                                                        }}
+                                                    >
+                                                        <FileText className="mr-2 h-3.5 w-3.5" />
+                                                        Ver Comprovante
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm text-muted-foreground italic">
+                                                        Nenhum comprovante
+                                                    </span>
+
+                                                    {/* Simulação do Input de Arquivo */}
+                                                    <div className="relative">
+                                                        <Input
+                                                            type="file"
+                                                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full disabled:cursor-not-allowed"
+                                                            onChange={(e) => handleUploadComprovante(mensalidade.id, e)}
+                                                            disabled={isUploading === mensalidade.id}
+                                                        />
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="border-dashed border-2 hover:bg-muted/50"
+                                                            disabled={isUploading === mensalidade.id}
+                                                        >
+                                                            {isUploading === mensalidade.id ? (
+                                                                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                                            ) : (
+                                                                <Upload className="mr-2 h-3.5 w-3.5" />
+                                                            )}
+                                                            {isUploading === mensalidade.id ? "Enviando..." : "Anexar"}
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+                </>
+            )}
+        </SheetContent>
+    </Sheet>
+</div >
     )
 }

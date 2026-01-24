@@ -128,11 +128,8 @@ export default function DashboardPage() {
           priority
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent flex flex-col justify-center px-8 border-b border-white/10">
-          <Badge className="w-fit mb-3 bg-primary/20 hover:bg-primary/30 text-white border-white/20 backdrop-blur-md px-3 py-1 font-bold">
-            Visão Geral
-          </Badge>
           <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">
-            Gestão Inteligente EduPro
+            Gestão Inteligente Triunne
           </h2>
           <p className="text-white/80 max-w-lg text-sm font-medium leading-relaxed">
             Seja bem-vindo ao seu centro de controle acadêmico. Monitore o crescimento e tome decisões baseadas em dados reais.

@@ -225,10 +225,6 @@ export default function FuncionariosPage() {
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                     <div className="flex items-center gap-2 text-sm text-primary/80 mb-2 font-medium">
-                        <Link href="/dashboard" className="hover:text-primary transition-colors">
-                            Dashboard
-                        </Link>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
                         <span className="text-muted-foreground">Administrativo</span>
                         <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
                         <span className="text-muted-foreground">Funcionários</span>

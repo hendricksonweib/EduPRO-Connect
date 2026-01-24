@@ -41,6 +41,8 @@ export interface PaginatedResponse<T> {
     count: number;
     next: string | null;
     previous: string | null;
+    total_pages: number;
+    current_page: number;
     results: T[];
 }
 
@@ -194,12 +196,17 @@ export interface DashboardData {
 export interface MonthlyFee {
     id: number;
     student: number;
-    amount: number;
+    student_name?: string;
+    student_registration?: string;
+    student_class?: string;
+    month: string;
     due_date: string;
-    paid: boolean;
-    payment_date?: string;
-    created_at: string;
-    updated_at: string;
+    value: string;
+    status: 'pago' | 'atrasado' | 'pendente';
+    payment_date?: string | null;
+    proof_of_payment?: string | null;
+    created_at?: string;
+    updated_at?: string;
 }
 
 // Calendar types

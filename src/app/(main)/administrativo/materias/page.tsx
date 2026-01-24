@@ -12,6 +12,7 @@ import {
     Settings,
     ChevronRight
 } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import {
     Card,
@@ -130,10 +131,40 @@ export default function GlobalSubjectsPage() {
         [subjects, searchTerm]
     )
 
-    if (isLoading) {
+    if (isLoading && subjects.length === 0) {
         return (
-            <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <div className="flex-1 space-y-8 p-4 md:p-8 pt-6">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <div className="flex items-center gap-2 mb-2">
+                            <Skeleton className="h-4 w-24" />
+                            <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                            <Skeleton className="h-4 w-32" />
+                        </div>
+                        <Skeleton className="h-9 w-64 mb-2" />
+                        <Skeleton className="h-5 w-80" />
+                    </div>
+                    <Skeleton className="h-11 w-44 rounded-xl" />
+                </div>
+
+                <Card className="rounded-[2rem] border-muted/30 shadow-sm overflow-hidden">
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-2">
+                                <Skeleton className="h-6 w-48" />
+                                <Skeleton className="h-4 w-32" />
+                            </div>
+                            <Skeleton className="h-10 w-72 rounded-xl" />
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            {Array.from({ length: 8 }).map((_, i) => (
+                                <Skeleton key={i} className="h-16 w-full rounded-2xl" />
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         )
     }

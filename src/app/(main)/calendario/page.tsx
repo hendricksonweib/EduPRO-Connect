@@ -1,7 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar as CalendarIcon, Clock, MapPin, Plus, Loader2 } from "lucide-react"
+import {
+    Calendar as CalendarIcon,
+    Clock,
+    MapPin,
+    Plus,
+    Loader2,
+    ChevronRight,
+    CalendarDays,
+    Info
+} from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
     Card,
@@ -33,6 +43,7 @@ import {
 import { calendarService } from "@/services/calendar.service"
 import type { Event } from "@/services/types"
 import { toast } from "sonner"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function CalendarioPage() {
     const [events, setEvents] = useState<Event[]>([])
@@ -164,22 +175,56 @@ export default function CalendarioPage() {
 
     const getTypeColor = (type: string) => {
         switch (type) {
-            case 'Reunião': return 'bg-blue-500 text-white'
-            case 'Feriado': return 'bg-red-500 text-white'
-            case 'Acadêmico': return 'bg-green-500 text-white'
-            default: return 'bg-gray-500 text-white'
+            case 'Reunião': return 'bg-blue-500 text-white hover:bg-blue-600'
+            case 'Feriado': return 'bg-red-500 text-white hover:bg-red-600'
+            case 'Acadêmico': return 'bg-emerald-500 text-white hover:bg-emerald-600'
+            default: return 'bg-slate-500 text-white hover:bg-slate-600'
         }
     }
 
+    if (isLoading && events.length === 0) {
+        return (
+            <div className="flex-1 space-y-8 p-4 md:p-8 pt-6">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <div className="flex items-center gap-2 mb-2">
+                            <Skeleton className="h-4 w-20" />
+                            <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+                            <Skeleton className="h-4 w-16" />
+                        </div>
+                        <Skeleton className="h-9 w-64 mb-2" />
+                        <Skeleton className="h-5 w-80" />
+                    </div>
+                    <Skeleton className="h-11 w-44 rounded-xl" />
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-[1fr_300px]">
+                    <Skeleton className="h-[600px] w-full rounded-[2rem]" />
+                    <Skeleton className="h-[400px] w-full rounded-[2rem]" />
+                </div>
+            </div>
+        )
+    }
+
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold tracking-tight">Calendário Escolar</h1>
+        <div className="flex-1 space-y-8 p-4 md:p-8 pt-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <div className="flex items-center gap-2 text-sm text-primary/80 mb-2 font-medium">
+                        <span className="text-muted-foreground">Calendário</span>
+                    </div>
+                    <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                        Cronograma Escolar
+                    </h1>
+                    <p className="text-muted-foreground mt-1 text-lg">
+                        Acompanhe eventos, feriados e atividades acadêmicas.
+                    </p>
+                </div>
 
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button>
-                            <Plus className="mr-2 h-4 w-4" />
+                        <Button size="lg" className="shadow-lg shadow-primary/20 transition-all hover:shadow-primary/30 active:scale-95 rounded-xl">
+                            <Plus className="mr-2 h-5 w-5" />
                             Novo Evento
                         </Button>
                     </DialogTrigger>
@@ -313,12 +358,15 @@ export default function CalendarioPage() {
 
             <div className="grid gap-6 md:grid-cols-[1fr_300px]">
                 {/* Calendário Visual */}
-                <Card className="h-full min-h-[600px]">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle>{monthNames[currentMonth]} {currentYear}</CardTitle>
+                <Card className="h-full min-h-[600px] rounded-[2rem] border-muted/30 shadow-none">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6">
+                        <div>
+                            <CardTitle className="text-2xl font-bold">{monthNames[currentMonth]} {currentYear}</CardTitle>
+                            <CardDescription>Visualização mensal do cronograma</CardDescription>
+                        </div>
                         <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={handlePrevMonth}>Anterior</Button>
-                            <Button variant="outline" size="sm" onClick={handleNextMonth}>Próximo</Button>
+                            <Button variant="outline" size="sm" onClick={handlePrevMonth} className="rounded-lg">Anterior</Button>
+                            <Button variant="outline" size="sm" onClick={handleNextMonth} className="rounded-lg">Próximo</Button>
                         </div>
                     </CardHeader>
                     <CardContent>
@@ -336,7 +384,7 @@ export default function CalendarioPage() {
                                             ${day === null ? "bg-muted/20 border-transparent" : "hover:bg-muted/50"}
                                         `}
                                     >
-                                        <span className={`text-sm font-medium ${day === null ? "opacity-0" : ""}`}>
+                                        <span className={`text-sm font-bold w-10 h-10 flex items-center justify-center rounded-full mb-1 ${day === null ? "opacity-0" : "hover:bg-primary/10 transition-colors"}`}>
                                             {day}
                                         </span>
                                         {dayEvents.map(event => (
@@ -361,9 +409,13 @@ export default function CalendarioPage() {
 
                 {/* Lista de Próximos Eventos */}
                 <div className="flex flex-col gap-4">
-                    <Card>
+                    <Card className="rounded-[2rem] border-muted/30 shadow-none">
                         <CardHeader>
-                            <CardTitle className="text-base">Próximos Eventos</CardTitle>
+                            <div className="flex items-center gap-2 text-primary font-bold mb-1">
+                                <CalendarDays className="h-5 w-5" />
+                                <span className="text-lg">Próximos Eventos</span>
+                            </div>
+                            <CardDescription>Eventos confirmados para os próximos dias</CardDescription>
                         </CardHeader>
                         <CardContent className="grid gap-4">
                             {isLoading ? (
@@ -387,17 +439,17 @@ export default function CalendarioPage() {
                                                 {new Date(event.date + 'T12:00:00').toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}
                                             </span>
                                         </div>
-                                        <div className="space-y-1 min-w-0">
-                                            <p className="text-sm font-medium leading-none truncate" title={event.title}>{event.title}</p>
-                                            <div className="flex items-center text-xs text-muted-foreground gap-2">
+                                        <div className="space-y-1.5 min-w-0">
+                                            <p className="text-sm font-bold leading-none truncate group-hover:text-primary transition-colors" title={event.title}>{event.title}</p>
+                                            <div className="flex items-center text-[10px] text-muted-foreground gap-2 font-medium">
                                                 {event.time && (
-                                                    <>
+                                                    <div className="flex items-center gap-1">
                                                         <Clock className="h-3 w-3" />
                                                         <span>{event.time}</span>
-                                                    </>
+                                                    </div>
                                                 )}
                                             </div>
-                                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold transition-colors border-transparent ${getTypeColor(event.type)} opacity-80`}>
+                                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${getTypeColor(event.type)} bg-opacity-90`}>
                                                 {event.type}
                                             </span>
                                         </div>
@@ -405,6 +457,16 @@ export default function CalendarioPage() {
                                 ))
                             )}
                         </CardContent>
+                    </Card>
+
+                    <Card className="rounded-[2rem] border-none bg-primary/5 shadow-none p-6">
+                        <div className="flex items-center gap-3 mb-3 text-primary">
+                            <Info className="h-5 w-5" />
+                            <h3 className="font-bold">Informação</h3>
+                        </div>
+                        <p className="text-sm text-primary/80 leading-relaxed">
+                            O calendário é atualizado em tempo real. Eventos marcados como <strong>Acadêmico</strong> são feriados ou datas letivas importantes.
+                        </p>
                     </Card>
                 </div>
             </div>

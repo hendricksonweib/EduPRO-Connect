@@ -14,6 +14,7 @@ import {
     CreditCard,
     GraduationCap,
     ChevronRight,
+    ChevronLeft,
     UserPlus,
     UserCheck,
     Ban,
@@ -77,12 +78,18 @@ export default function AlunosPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [deleteId, setDeleteId] = useState<number | null>(null)
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(1)
+    const [totalItems, setTotalItems] = useState(0)
 
-    const fetchAlunos = useCallback(async () => {
+    const fetchAlunos = useCallback(async (page: number = 1) => {
         try {
             setIsLoading(true)
-            const response = await academicService.students.getAll()
+            const response = await academicService.students.getAll(page)
             setAlunos(response.results)
+            setTotalPages(response.total_pages)
+            setTotalItems(response.count)
+            setCurrentPage(response.current_page)
         } catch (error: any) {
             console.error("Error fetching students:", error)
             toast.error(academicService.handleError(error) || "Erro ao carregar alunos")
@@ -92,8 +99,8 @@ export default function AlunosPage() {
     }, [])
 
     useEffect(() => {
-        fetchAlunos()
-    }, [fetchAlunos])
+        fetchAlunos(currentPage)
+    }, [fetchAlunos, currentPage])
 
     const handleDelete = useCallback(async () => {
         if (!deleteId) return
@@ -216,10 +223,6 @@ export default function AlunosPage() {
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                     <div className="flex items-center gap-2 text-sm text-primary/80 mb-2 font-medium">
-                        <Link href="/dashboard" className="hover:text-primary transition-colors">
-                            Dashboard
-                        </Link>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
                         <span className="text-muted-foreground">Alunos</span>
                     </div>
                     <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
@@ -388,6 +391,39 @@ export default function AlunosPage() {
                         ))
                     )}
                 </div>
+
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-between bg-card/60 backdrop-blur-sm p-4 rounded-3xl border border-muted/30 shadow-sm mt-8">
+                        <p className="text-sm text-muted-foreground font-medium">
+                            Mostrando <span className="text-foreground font-bold">{alunos.length}</span> de <span className="text-foreground font-bold">{totalItems}</span> alunos
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                disabled={currentPage === 1 || isLoading}
+                                className="rounded-xl transition-all active:scale-95"
+                            >
+                                <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+                            </Button>
+                            <div className="flex items-center gap-1 mx-2">
+                                <span className="text-sm font-bold text-primary">{currentPage}</span>
+                                <span className="text-sm text-muted-foreground">/</span>
+                                <span className="text-sm font-medium text-muted-foreground">{totalPages}</span>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                disabled={currentPage === totalPages || isLoading}
+                                className="rounded-xl transition-all active:scale-95"
+                            >
+                                Próximo <ChevronRight className="h-4 w-4 ml-1" />
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Student Details Sheet */}

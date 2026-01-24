@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { authService, apiClient } from "@/services"
+import { LogoLoading } from "@/components/logo-loading"
 
 export function LoginForm({
   className,
@@ -46,57 +47,64 @@ export function LoginForm({
   }
 
   return (
-    <form className={cn("flex flex-col gap-6", className)} {...props} onSubmit={handleSubmit}>
-      <FieldGroup>
-        <div className="flex flex-col items-center gap-1 text-center">
-          <Image
-            src="/logo(4).png"
-            alt="Logo"
-            width={200}
-            height={60}
-            priority
-          />
+    <>
+      {isLoading && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-md animate-in fade-in duration-500">
+          <LogoLoading size={150} />
         </div>
-        {error && (
-          <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
-            {error}
+      )}
+      <form className={cn("flex flex-col gap-6", className)} {...props} onSubmit={handleSubmit}>
+        <FieldGroup>
+          <div className="flex flex-col items-center gap-1 text-center">
+            <Image
+              src="/logo(4).png"
+              alt="Logo"
+              width={200}
+              height={60}
+              priority
+            />
           </div>
-        )}
-        <Field>
-          <FieldLabel htmlFor="username">Usuário</FieldLabel>
-          <Input
-            id="username"
-            type="text"
-            placeholder="Digite seu usuário"
-            required
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            disabled={isLoading}
-            aria-invalid={!!error}
-          />
-        </Field>
-        <Field>
-          <div className="flex items-center">
-            <FieldLabel htmlFor="password">Senha</FieldLabel>
-          </div>
-          <Input
-            id="password"
-            type="password"
-            placeholder="Digite sua senha"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={isLoading}
-            aria-invalid={!!error}
-          />
-        </Field>
-        <Field>
-          <FieldSeparator />
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Entrando..." : "Entrar"}
-          </Button>
-        </Field>
-      </FieldGroup>
-    </form>
+          {error && (
+            <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
+              {error}
+            </div>
+          )}
+          <Field>
+            <FieldLabel htmlFor="username">Usuário</FieldLabel>
+            <Input
+              id="username"
+              type="text"
+              placeholder="Digite seu usuário"
+              required
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              disabled={isLoading}
+              aria-invalid={!!error}
+            />
+          </Field>
+          <Field>
+            <div className="flex items-center">
+              <FieldLabel htmlFor="password">Senha</FieldLabel>
+            </div>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Digite sua senha"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+              aria-invalid={!!error}
+            />
+          </Field>
+          <Field>
+            <FieldSeparator />
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Entrando..." : "Entrar"}
+            </Button>
+          </Field>
+        </FieldGroup>
+      </form>
+    </>
   )
 }
